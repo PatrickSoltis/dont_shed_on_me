@@ -7,7 +7,7 @@ Electricity is essential to daily life in the developed world, powering critical
 ## Repository Contents
 
 Proposal - Initial project proposal describing background and high-level objective.
-HW3+Battery - Early attempt at adapting known system to include a battery
+\nHW3+Battery - Early attempt at adapting known system to include a battery
 
 ## Collaboration Rules
 
