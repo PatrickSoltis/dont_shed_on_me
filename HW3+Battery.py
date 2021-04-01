@@ -1,8 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from cvxpy import *
-%matplotlib inline
 import pandas as pd
+
+
+#LETS PUSH THIS CHANGE TO GIT WOOOOOOT
+
 
 ## 14 Node Parameters
 
