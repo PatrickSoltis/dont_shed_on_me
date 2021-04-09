@@ -8,7 +8,7 @@ import pandas as pd
 
 #testing testing - Jack
 #third time is the charm
-
+sequence = [0,1,2,3]
 
 ## 14 Node Parameters
 ## baroo
