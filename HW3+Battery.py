@@ -4,17 +4,17 @@ from cvxpy import *
 import pandas as pd
 
 
-#LETS PUSH THIS CHANGE TO GIT WOOOOOOT
+'''
+Converting test comments to docstring:
+LETS PUSH THIS CHANGE TO GIT WOOOOOOT
+testing testing - Jack
+third time is the charm
+14 Node Parameters
+baroo
+testing - maya
+Node (aka Bus) Data
+'''
 
-#testing testing - Jack
-#third time is the charm
-
-## 14 Node Parameters
-## baroo
-
-# testing - maya
-
-### Node (aka Bus) Data
 '''
 Battery: Add 14th node (id=13) with solar (node 9) parent.
 Multiple rows in l_P and l_Q to indicate additional points in time.
