@@ -14,6 +14,7 @@ import pandas as pd
 
 # testing - maya
 
+### Node (aka Bus) Data
 '''
 Battery: Add 14th node (id=13) with solar (node 9) parent.
 Multiple rows in l_P and l_Q to indicate additional points in time.
