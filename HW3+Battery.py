@@ -9,6 +9,7 @@ import pandas as pd
 #testing testing - Jack
 
 ## 14 Node Parameters
+## baroo
 
 ### Node (aka Bus) Data
 '''
@@ -30,7 +31,7 @@ l_Q = np.array([[0, 0.116, 0, 0.29, 0.125, 0.132, 0.66, 0, 0.151, 0.462, 0, 0.08
               [0, 0.116, 0, 0.29, 0.125, 0.132, 0.66, 0, 0.151, 0.462, 0, 0.08, 0.086, 0],
               [0, 0.116, 0, 0.29, 0.125, 0.132, 0.66, 0, 0.151, 0.462, 0, 0.08, 0.086, 0]])
 
-# l_j^S: Apparent power consumption [MVA]
+# l_j^S: Apparent power consumption [MVA] 
 l_S = np.sqrt(l_P**2 + l_Q**2)
 
 # s_j,max: Maximal generating power [MW]
