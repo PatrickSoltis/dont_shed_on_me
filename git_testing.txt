@@ -1,0 +1,5 @@
+Use this file for warming up with Github commands, if you need it!
+
+If you want to practice safely removing things:
+Get rid of this line!
+Or this one.
