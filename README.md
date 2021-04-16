@@ -6,12 +6,5 @@ Electricity is essential to daily life in the developed world, powering critical
 
 ## Repository Contents
 
-* Proposal - Initial project proposal describing background and high-level objective.
-* HW3+Battery - Early attempt at adapting known system to include a battery
-
-## Collaboration Rules
-
-Only commit directly to main branch if you are conducting minor edits (e.g., syntax, spelling corrections), or if changing something agreed upon by the full group in a live meeting. <br />
-Create a new branch and start a pull request for any significant changes. The assigned "leader" for each section should review pull requests:
-List names and focus areas
-<br />
+* MicrogridModel0_1.py - Model lives here
+* git_testing.txt - Place for the team to practice git commands
