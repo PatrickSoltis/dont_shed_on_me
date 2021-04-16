@@ -11,7 +11,6 @@ import pandas as pd
 
 # %%
 # DATA IMPORT
-import pandas as pd
 office = pd.read_csv('SF_Office_import.csv')
 CARE = pd.read_csv('CARE_import.csv')
 a1 = pd.read_csv('a1_import.csv')
