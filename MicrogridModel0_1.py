@@ -11,7 +11,7 @@ import pandas as pd
 
 # %%
 # DATA IMPORT
-office = pd.read_csv('SF_Office_import.csv')
+office = pd.read_csv('SF_Office_import.csv') # Not planned in the microgrid
 CARE = pd.read_csv('CARE_import.csv')
 a10 = pd.read_csv('a10_import.csv')
 e1 = pd.read_csv('e1_import.csv')
@@ -48,7 +48,6 @@ plt.title("Residential Load Profile: Disaggregated 10 Day Time Horizon")
 plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
-
 # %%
 # Data Vis
 # Plot Resi-CARE total and disagg load
@@ -56,6 +55,16 @@ plt.plot(CARE['Time (Hour)'],CARE['Total Power (kW)'], label="Total")
 plt.plot(CARE['Time (Hour)'],CARE['Critical Power (kW)'], label="Microgrid Baseline")
 plt.plot(CARE['Time (Hour)'],CARE['Remaining Power (kW)'], label="Remaining")
 plt.title("Residential Load Profile: Disaggregated 10 Day Time Horizon")
+plt.xlabel("Time (Hours)")
+plt.ylabel("Power (kW)")
+plt.legend();
+# %%
+# Data Vis
+# Plot fire-station / hospital total and disagg load
+plt.plot(a10['Time (Hour)'],a10['Total Power (kW)'], label="Total")
+plt.plot(a10['Time (Hour)'],a10['Critical Power (kW)'], label="Microgrid Baseline")
+plt.plot(a10['Time (Hour)'],a10['Remaining Power (kW)'], label="Remaining")
+plt.title("Critical Facility Load Profile: Disaggregated 10 Day Time Horizon")
 plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
@@ -69,9 +78,4 @@ plt.title("Solar Gen: 10 Day Time Horizon")
 plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
-
-
-
-
-
 # %%
