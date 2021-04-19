@@ -13,8 +13,9 @@ import pandas as pd
 # DATA IMPORT
 office = pd.read_csv('SF_Office_import.csv')
 CARE = pd.read_csv('CARE_import.csv')
-a1 = pd.read_csv('a1_import.csv')
+a10 = pd.read_csv('a10_import.csv')
 e1 = pd.read_csv('e1_import.csv')
+mbl = pd.read_csv('MBL_import.csv')
 solar = pd.read_csv('solar_import.csv')
 
 # %%
@@ -26,13 +27,35 @@ plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
 
+
 # %%
 # Data Vis
-# Plot other loads
-plt.plot(CARE['Time (Hour)'],CARE['Power (kW)'], label="Res. CARE")
-plt.plot(e1['Time (hour)'],e1['Power (kW)'], label="Res.")
-plt.plot(a1['Time (Hour)'],a1['Power (kW)'], label="Non-Res CF")
-plt.title("CARE, Resi, Crit Load Load Profiles: 10 Day Time Horizon")
+# Plot MBL total and disagg load
+plt.plot(mbl['Time (Hour)'],mbl['Total Power (kW)'], label="Total")
+plt.plot(mbl['Time (Hour)'],mbl['Critical Power (kW)'], label="Microgrid Baseline")
+plt.plot(mbl['Time (Hour)'],mbl['Remaining Power (kW)'], label="Remaining")
+plt.title("MBL Load Profile: Disaggregated 10 Day Time Horizon")
+plt.xlabel("Time (Hours)")
+plt.ylabel("Power (kW)")
+plt.legend();
+# %%
+# Data Vis
+# Plot Resi total and disagg load
+plt.plot(e1['Time (Hour)'],e1['Total Power (kW)'], label="Total")
+plt.plot(e1['Time (Hour)'],e1['Critical Power (kW)'], label="Microgrid Baseline")
+plt.plot(e1['Time (Hour)'],e1['Remaining Power (kW)'], label="Remaining")
+plt.title("Residential Load Profile: Disaggregated 10 Day Time Horizon")
+plt.xlabel("Time (Hours)")
+plt.ylabel("Power (kW)")
+plt.legend();
+
+# %%
+# Data Vis
+# Plot Resi-CARE total and disagg load
+plt.plot(CARE['Time (Hour)'],CARE['Total Power (kW)'], label="Total")
+plt.plot(CARE['Time (Hour)'],CARE['Critical Power (kW)'], label="Microgrid Baseline")
+plt.plot(CARE['Time (Hour)'],CARE['Remaining Power (kW)'], label="Remaining")
+plt.title("Residential Load Profile: Disaggregated 10 Day Time Horizon")
 plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
