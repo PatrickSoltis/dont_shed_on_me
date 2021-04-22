@@ -83,6 +83,7 @@ plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
 # %%
+<<<<<<< HEAD
 ### Define optimization vars
 
     ### nodal power
@@ -179,3 +180,77 @@ l_Sk = Dk
 
 0 <= b_Q 
 
+=======
+
+# Jack's section
+
+# List of node indices
+i_idx = np.arange(8)
+
+## Define microgrid parameters ##
+
+# import nodal power demand values
+D = pd.read_csv("nodes.csv")
+D_apparent_total = pd.DataFrame()
+D_apparent_critical = pd.DataFrame()
+D_apparent_remaining = pd.DataFrame()
+
+# Apparent power demand [MW] at each node
+for x in i_idx:
+    D_apparent_total["Node %1i"%x + " Total Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Total)"]
+    D_apparent_critical["Node %1i"%x + " Critical Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Critical)"]
+    D_apparent_remaining["Node %1i"%x + " Remaining Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Remaining)"]
+
+# Apparent power generated at each node (excludes power dispatched from batteries)
+s = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+
+# Active power generated at each node (excludes power dispatched from batteries)
+p = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+
+# Reactive power generated at each node (excludes power dispatched from batteries)
+q = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+
+# Maximum energy that batteries at nodes 1,2 and 7 can store (battery capacity)
+j_max = np.array([0, 0, 0])
+
+# Maximum power discharge and charge rates
+# Does this only apply to nodes 1,2 and 7?
+#bS_rating = np.zeros((2,3), dtype=int)
+
+# Maximum power that diesel generator can produce
+d_max = 0
+
+# Priority ranking of different customer categories (5=highest priority, 1=lowest)
+R = np.array([5, 4, 3, 2])
+
+# Power factor (i.e., assumed ratio of active power to apparent power)
+pf = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+
+# Minimum nodal voltage
+V_min = 0
+
+# Maximum nodal voltage
+V_max = 0
+
+# Resistance of each power line (between a node and its parent node)
+r = np.array([0, 0, 0, 0, 0, 0, 0])
+
+# Reactance of each power line (between a node and its parent node)
+x = np.array([0, 0, 0, 0, 0, 0, 0])
+
+# Maximum current for each power line (between a node and its parent node)
+I_max = np.array([0, 0, 0, 0, 0, 0, 0])
+
+# Adjacency matrix where A[i, j]=1 if i is the parent of j
+A = np.array([[1, 1, 1, 1, 1, 1, 1, 1],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0]])
+
+# rho(j): Parent node of node j
+rho = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+>>>>>>> b25d4f0f2d4bfc69a6785ca993b464da03dde3db
