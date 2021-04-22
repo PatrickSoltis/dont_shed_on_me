@@ -79,3 +79,5 @@ plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
 # %%
+
+# Jack's section
