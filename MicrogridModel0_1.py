@@ -136,7 +136,6 @@ constraints += [ norm(vstack([d_P[jj],d_Q[jj]])) <= d_S[jj] ] #diesel generator
 ### Following constraints are verified but not yet sorted by Patrick
 # Apparent Power Limits
 constraints = [s - s_max <= 0, -p <= 0, -q <= 0, norm(vstack([sum(p), sum(q)]))- sum(s)<= 0]
-#Not sure about this last one
 
 # Nodal voltage limits
 constraints += [v_min**2 - V <= 0, V - v_max**2 <= 0]
