@@ -5,7 +5,7 @@
 # NOTE FOR EVERYONE
 # TO MAKE CELLS, ADD THE FOLLOWING TEXT WITHOUT OQTES " # %% "
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from cvxpy import *
 import pandas as pd
 
@@ -82,10 +82,22 @@ plt.legend();
 
 # Jack's section
 
+# List of node indices
+i_idx = np.arange(8)
+
 ## Define microgrid parameters ##
 
+# import nodal power demand values
+D = pd.read_csv("nodes.csv")
+D_apparent_total = pd.DataFrame()
+D_apparent_critical = pd.DataFrame()
+D_apparent_remaining = pd.DataFrame()
+
 # Apparent power demand [MW] at each node
-D = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+for x in i_idx:
+    D_apparent_total["Node %1i"%x + " Total Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Total)"]
+    D_apparent_critical["Node %1i"%x + " Critical Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Critical)"]
+    D_apparent_remaining["Node %1i"%x + " Remaining Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Remaining)"]
 
 # Apparent power generated at each node (excludes power dispatched from batteries)
 s = np.array([0, 0, 0, 0, 0, 0, 0, 0])
