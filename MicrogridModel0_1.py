@@ -1,4 +1,4 @@
-# %%
+# %%​
 
 
 # %%
@@ -165,14 +165,15 @@ V_min = 0.95
 # Maximum nodal voltage
 V_max = 1.05
 
+#Adding in dummy variables for r, x and I matrix until clarified:
 # Resistance of each power line (between a node and its parent node)
-r = np.array([0, 0, 0, 0, 0, 0, 0])
+r = np.array([0,0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
 
 # Reactance of each power line (between a node and its parent node)
-x = np.array([0, 0, 0, 0, 0, 0, 0])
+x = np.array([0,0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
 
 # Maximum current for each power line (between a node and its parent node)
-I_max = np.array([0, 0, 0, 0, 0, 0, 0])
+I_max = np.array([0,1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2])
 
 # Adjacency matrix where A[i, j]=1 if i is the parent of j
 A = np.array([[1, 1, 1, 1, 1, 1, 1, 1],
@@ -194,33 +195,33 @@ rho = np.array([0, 0, 0, 0, 0, 0, 0, 0])
 
 # solar generation
 #s is a parameter
-p = Variable(7)
-q = Variable(7)
+S_p = Variable(8)
+S_q = Variable(8)
 
 # battery injection/absorption
-b_S = Variable(7)
-b_Q = Variable(7)
-b_P = Variable(7)
+b_S = Variable(8)
+b_Q = Variable(8)
+b_P = Variable(8)
 
 # power delivered to load
-l_S = Variable(7)
-l_P = Variable(7)
-l_Q = Variable(7)
+l_S = Variable(8)
+l_P = Variable(8)
+l_Q = Variable(8)
 
 # controllable generation (diesel)
-d_S = Variable(7)
-d_P = Variable(7)
-d_Q = Variable(7)
+d_S = Variable(8)
+d_P = Variable(8)
+d_Q = Variable(8)
 
 # other
-V = Variable(7) #voltage
-F= Variable(7) #fraction of demand fulfilled
-j= Variable(7) #battery state of charge
+V = Variable(8) #voltage
+F= Variable(8) #fraction of demand fulfilled
+j= Variable(8) #battery state of charge
 
 # power flow between nodes
-P = Variable((7, 7))
-Q = Variable((7, 7))
-L = Variable((7, 7))
+P = Variable((8, 8))
+Q = Variable((8, 8))
+L = Variable((8,8))
 
 # %%
 ### Define objective function
@@ -230,22 +231,30 @@ objective = Maximize(R.T@F)
 ### Define constraints
 constraints = []
 
+0 <= j <= jmax #Constraint 1, battery energy availability
+-b_Srating <= b_S[b] <= b_Srating #Constraint 2, charge/discharge rating of battery
+b_S*dt <=  j[t-1] #Constraint 3, energy discharged <=energy available
+0 <= b_Q #constraint 7, battery can't store Q
+0 <= b_S[d] <= dmax #Constraint 4, diesel gen capacity
+f[t]= f[t-1] - d_S * 0.08 # Constraint 10, fuel equation
+d_S* 0.08 <= f[t] #Constraint 11, generation fuel used less than available fuel
+
     ### Reactive/Active/Apparent power definitions
 
-constraints += [ norm(vstack([p[jj],q[jj]])) <= s[jj] ] #solar p and q output tied to parameter input
-constraints += [ norm(vstack([b_P[jj],b_Q[jj]])) <= b_S[jj] ] #batteries
-constraints += [ norm(vstack([l_P[jj],l_Q[jj]])) <= l_S[jj] ] #demand
-constraints += [ norm(vstack([d_P[jj],d_Q[jj]])) <= d_S[jj] ] #diesel generator 
+constraints += [ norm(vstack([s_p[jj],s_q[jj]])) <= s_s[jj] ] #Constraint 9,solar p and q output tied to parameter input
+constraints += [ norm(vstack([b_P[jj],b_Q[jj]])) <= b_S[jj] ] #Constraint 6,batteries
+constraints += [ norm(vstack([l_P[jj],l_Q[jj]])) <= l_S[jj] ] #Constraint 5,demand
+constraints += [ norm(vstack([d_P[jj],d_Q[jj]])) <= d_S[jj] ] #Constraint 8,diesel generator 
 
 ### Following constraints are verified but not yet sorted by Patrick
-# Apparent Power Limits
-constraints = [s - s_max <= 0, -p <= 0, -q <= 0, norm(vstack([sum(p), sum(q)]))- sum(s)<= 0]
+# Apparent Power Limits- solar
+constraints = [s_s - s_s_max <= 0, -s_p <= 0, -s_q <= 0, norm(vstack([sum(s_p), sum(s_q)]))- sum(s_s)<= 0]
 #Not sure about this last one
 
-# Nodal voltage limits
+# Constraints 12/13, Nodal voltage limits
 constraints += [v_min**2 - V <= 0, V - v_max**2 <= 0]
 
-# Squared line current limits
+# Constraint 14, Squared line current limits
 constraints += [L - I_max**2 <= 0]
 
 # Boundary condition for power line flows
@@ -263,24 +272,21 @@ for jj in j_idx:
     # Parent node, i = \rho(j)
     i =  rho[jj]    
     
-    # Line Power Flows
-    constraints += [P[i, jj] - (l_P[jj] - p[jj]) - r[i, jj]*L[i, jj] - sum([A[
+    # Line Power Flows- Constraint 21, this is wrong for our variables?
+    constraints += [P[i, jj] - (l_P[jj] - s_p[jj]) - r[i, jj]*L[i, jj] - [A[jj,:]@P[jj,:]
+    #Missing constraint 22-24, similar variable confusion
+
 
 # %%
 # Additional inequality constraints: 0jjmax
 
-0 <= j <= jmax
--b_Srating <= b_S[b] <= b_Srating
-b_S*dt <=  jt-1 
-0 <= b_S[d] <= dmax
-
 # Define constraints
-b_S[n] = 0
-F = l_S/D
-l_S = s + b_S        
-j[t] = j[t-1] - b_S[t]*dt   
+b_S[n] = 0 #Constraint 15, no power stored - I think this needs modification to refer to the correct nodes. 
+F = l_S/D #Constraint 16, Fraction of load served
+l_S = s_s + b_S + d_S #Constraint 17a, total supply 
+l_P= s_p + b_S + d_S #Constraint 17b, real power supply
+l_Q= s_q + b_Q + d_Q #Constraint 17c, reactive power supply    
+j[t] = j[t-1] - b_S[t]*dt  #Constraint 18, time dimension of battery 
 #j_0 = **choose initial value** A parameter?
-l_Sk = Dk
-
-0 <= b_Q 
-
+l_S[4] = D[4] #Constraint 20, medical baseline #are we keeping this constraint?
+l_S[5] = D[5] #Constraint 20, critical facility #are we keeping this constraint?
