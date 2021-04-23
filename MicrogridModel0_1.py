@@ -228,39 +228,50 @@ L = Variable((8,8))
 objective = Maximize(R.T@F)
 
 # %%
-### Define constraints
+### Define constraints. Numbering of constraints corresponds to report.
 constraints = []
 
-0 <= j <= jmax #Constraint 1, battery energy availability
--b_Srating <= b_S[b] <= b_Srating #Constraint 2, charge/discharge rating of battery
-b_S*dt <=  j[t-1] #Constraint 3, energy discharged <=energy available
-0 <= b_Q #constraint 7, battery can't store Q
-0 <= b_S[d] <= dmax #Constraint 4, diesel gen capacity
-f[t]= f[t-1] - d_S * 0.08 # Constraint 10, fuel equation
-d_S* 0.08 <= f[t] #Constraint 11, generation fuel used less than available fuel
+    ### Batteries
 
-    ### Reactive/Active/Apparent power definitions
+#1 - Battery energy availability
+constraints += [ 0 <= j <= jmax ]
+#2 - Charge/discharge rating of battery
+constraints += [ -b_Srating <= b_S[b] <= b_Srating ]
+#3 - Energy discharged <=energy available
+constraints += [ b_S*dt <=  j[t-1] ] 
+#7 - Battery can't store Q
+constraints += [ 0 <= b_Q ]
 
-constraints += [ norm(vstack([s_p[jj],s_q[jj]])) <= s_s[jj] ] #Constraint 9,solar p and q output tied to parameter input
-constraints += [ norm(vstack([b_P[jj],b_Q[jj]])) <= b_S[jj] ] #Constraint 6,batteries
-constraints += [ norm(vstack([l_P[jj],l_Q[jj]])) <= l_S[jj] ] #Constraint 5,demand
-constraints += [ norm(vstack([d_P[jj],d_Q[jj]])) <= d_S[jj] ] #Constraint 8,diesel generator 
+    ### Diesel generator
 
-### Following constraints are verified but not yet sorted by Patrick
-# Apparent Power Limits- solar
-constraints = [s_s - s_s_max <= 0, -s_p <= 0, -s_q <= 0, norm(vstack([sum(s_p), sum(s_q)]))- sum(s_s)<= 0]
-#Not sure about this last one
+#4 - Diesel generation capacity (power)
+constraints += [ 0 <= b_S[d] <= dmax ]
+#10 - Fuel equation
+constraints += [ f[t]= f[t-1] - d_S * 0.08 ]
+#11 - Cannot use more fuel than available
+constraints += [ d_S* 0.08 <= f[t] ]
 
-# Constraints 12/13, Nodal voltage limits
+    ### Reactive/Active/Apparent power definitions at nodes
+
+constraints += [ norm(vstack([s_p[jj],s_q[jj]])) <= s_s[jj] ] #9 - solar p and q output tied to parameter input
+constraints += [ norm(vstack([b_P[jj],b_Q[jj]])) <= b_S[jj] ] #6 - batteries
+constraints += [ norm(vstack([l_P[jj],l_Q[jj]])) <= l_S[jj] ] #5 - demand
+constraints += [ norm(vstack([d_P[jj],d_Q[jj]])) <= d_S[jj] ] #8 - diesel generator 
+
+    ### Other
+
+#12 & 13 - Nodal voltage limits
 constraints += [v_min**2 - V <= 0, V - v_max**2 <= 0]
 
-# Constraint 14, Squared line current limits
+#14 - Squared line current limits
 constraints += [L - I_max**2 <= 0]
 
-# Boundary condition for power line flows
+    ### Boundary conditions
+
+# Power line flow for node 0
 constraints += [P[0,0] == 0, Q[0,0] == 0]
 
-# Boundary condition for squared line current
+# Squared line current for node 0
 constraints += [L[0,0] == 0]
 
 # Fix node 0 voltage to be 1 "per unit" (p.u.)
