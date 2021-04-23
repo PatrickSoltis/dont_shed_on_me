@@ -80,27 +80,25 @@ plt.ylabel("Power (kW)")
 plt.legend();
 # %%
 
-# Jack's section
-
 # List of node indices
 i_idx = np.arange(8)
 
-## Define microgrid parameters ##
+### Define microgrid parameters ###
 
 # Import nodal power demand values
 D = pd.read_csv("nodes.csv")
 
-#  Create apparent power dataframes
+#  Create apparent power demand dataframes
 D_apparent_total = pd.DataFrame()
 D_apparent_critical = pd.DataFrame()
 D_apparent_remaining = pd.DataFrame()
 
-#  Create active power dataframes
+#  Create active power demand dataframes
 D_real_total = pd.DataFrame()
 D_real_critical = pd.DataFrame()
 D_real_remaining = pd.DataFrame()
 
-#  Create reactive power dataframes
+#  Create reactive power demand dataframes
 D_reactive_total = pd.DataFrame()
 D_reactive_critical = pd.DataFrame()
 D_reactive_remaining = pd.DataFrame()
@@ -113,7 +111,7 @@ for x in i_idx:
     D_apparent_critical["Node %1i"%x + " Critical Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Critical)"]
     D_apparent_remaining["Node %1i"%x + " Remaining Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Remaining)"]
 
-    # Active power dataframes
+    # Real power dataframes
     D_real_total["Node %1i"%x + " Total Real Power"] = D["Node %1i"%x + " (Real Power; Total)"]
     D_real_critical["Node %1i"%x + " Critical Real Power"] = D["Node %1i"%x + " (Real Power; Critical)"]
     D_real_remaining["Node %1i"%x + " Remaining Real Power"] = D["Node %1i"%x + " (Real Power; Remaining)"]
@@ -123,36 +121,39 @@ for x in i_idx:
     D_reactive_critical["Node %1i"%x + " Critical Reactive Power"] = D["Node %1i"%x + " (Reactive Power; Critical)"]
     D_reactive_remaining["Node %1i"%x + " Remaining Reactive Power"] = D["Node %1i"%x + " (Reactive Power; Remaining)"]
 
+# Create solar power generated dataframe
+solar_gen = pd.DataFrame()
+
+# Define month of solar power to be examined
+month = "June"
+
 # Apparent power generated at each node (excludes power dispatched from batteries)
-s = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+solar_gen = np.array([0, 0, 0, 0, 0, 0, 0, 0])
 
 # Active power generated at each node (excludes power dispatched from batteries)
-p = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+s_p = np.array([0, 0, 0, 0, 0, 0, 0, 0])
 
 # Reactive power generated at each node (excludes power dispatched from batteries)
-q = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+s_q = np.array([0, 0, 0, 0, 0, 0, 0, 0])
 
 # Maximum energy that batteries at nodes 1,2 and 7 can store (battery capacity)
-j_max = np.array([0, 0, 0])
+j_max = np.array([9.5, 9.5, 95])
 
 # Maximum power discharge and charge rates
-# Does this only apply to nodes 1,2 and 7?
-# bS_rating = np.zeros((2,3), dtype=int)
+bS_rating = np.array([[25, 25, 40],
+                      [25, 25, 40]])
 
-# Maximum power that diesel generator can produce
-d_max = 0
+# Maximum power that diesel generator can produce (kW)
+d_max = 20
 
 # Priority ranking of different customer categories (5=highest priority, 1=lowest)
 R = np.array([5, 4, 3, 2])
 
-# Power factor (i.e., assumed ratio of active power to apparent power)
-# pf = np.array([0, 0, 0, 0, 0, 0, 0, 0])
-
 # Minimum nodal voltage
-V_min = 0
+V_min = 0.95
 
 # Maximum nodal voltage
-V_max = 0
+V_max = 1.05
 
 # Resistance of each power line (between a node and its parent node)
 r = np.array([0, 0, 0, 0, 0, 0, 0])
