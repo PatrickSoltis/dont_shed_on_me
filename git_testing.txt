@@ -3,3 +3,7 @@ Use this file for warming up with Github commands, if you need it!
 If you want to practice safely removing things:
 Get rid of this line!
 Or this one.
+
+Create a new branch for every set of changes you make.
+Branches will be merged in the browser, logged into Github directly.
+If you need to make additional changes but a previous branch has not yet been merged, create a branch off that branch.
