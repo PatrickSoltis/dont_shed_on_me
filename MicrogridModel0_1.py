@@ -122,19 +122,26 @@ for x in i_idx:
     D_reactive_remaining["Node %1i"%x + " Remaining Reactive Power"] = D["Node %1i"%x + " (Reactive Power; Remaining)"]
 
 # Create solar power generated dataframe
-solar_gen = pd.DataFrame()
+s_s = pd.DataFrame()
 
 # Define month of solar power to be examined
 month = "June"
 
-# Apparent power generated at each node (excludes power dispatched from batteries)
-solar_gen = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+# Solar apparent power generated at each node (excludes power dispatched from batteries)
+s_s["Node 0: " + month + " solar generation"] = 0
+s_s["Node 1: " + month + " solar generation"] = solar[month + " (kW)"]
+s_s["Node 2: " + month + " solar generation"] = solar[month + " (kW)"]
 
-# Active power generated at each node (excludes power dispatched from batteries)
-s_p = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+for x2 in np.arange(3,8):
+    s_s["Node %1i: "%x2 + month + " solar generation"] = 0
+s_s["Node 0: " + month + " solar generation"] = 0
 
-# Reactive power generated at each node (excludes power dispatched from batteries)
-s_q = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+# Solar real power generated at each node (excludes power dispatched from batteries)
+s_p = s_s
+
+# Solar reactive power generated at each node (excludes power dispatched from batteries)
+s_q = s_s
+s_q.iloc[:,:] = 0
 
 # Maximum energy that batteries at nodes 1,2 and 7 can store (battery capacity)
 j_max = np.array([9.5, 9.5, 95])
