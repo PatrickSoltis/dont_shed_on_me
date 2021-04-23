@@ -1,5 +1,6 @@
 Use this file for warming up with Github commands, if you need it!
 
-Create a new branch for every set of changes you make.
-Branches will be merged in the browser, logged into Github directly.
-If you need to make additional changes but a previous branch has not yet been merged, create a branch off that branch.
+1. Create a new branch for every set of changes you make.
+2. Branches will be merged in the browser, logged into Github directly.
+3. If you need to make additional changes but a previous branch has not yet been merged, 
+create a branch off that branch.
