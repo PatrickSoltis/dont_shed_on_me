@@ -96,9 +96,9 @@ D_apparent_critical = pd.DataFrame()
 D_apparent_remaining = pd.DataFrame()
 
 #  Create active power dataframes
-D_active_total = pd.DataFrame()
-D_active_critical = pd.DataFrame()
-D_active_remaining = pd.DataFrame()
+D_real_total = pd.DataFrame()
+D_real_critical = pd.DataFrame()
+D_real_remaining = pd.DataFrame()
 
 #  Create reactive power dataframes
 D_reactive_total = pd.DataFrame()
@@ -114,9 +114,9 @@ for x in i_idx:
     D_apparent_remaining["Node %1i"%x + " Remaining Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Remaining)"]
 
     # Active power dataframes
-    D_active_total["Node %1i"%x + " Total Active Power"] = D["Node %1i"%x + " (Active Power; Total)"]
-    D_active_critical["Node %1i"%x + " Critical Active Power"] = D["Node %1i"%x + " (Active Power; Critical)"]
-    D_active_remaining["Node %1i"%x + " Remaining Active Power"] = D["Node %1i"%x + " (Active Power; Remaining)"]
+    D_real_total["Node %1i"%x + " Total Real Power"] = D["Node %1i"%x + " (Real Power; Total)"]
+    D_real_critical["Node %1i"%x + " Critical Real Power"] = D["Node %1i"%x + " (Real Power; Critical)"]
+    D_real_remaining["Node %1i"%x + " Remaining Real Power"] = D["Node %1i"%x + " (Real Power; Remaining)"]
 
     # Reactive power dataframes
     D_reactive_total["Node %1i"%x + " Total Reactive Power"] = D["Node %1i"%x + " (Reactive Power; Total)"]
