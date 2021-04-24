@@ -250,8 +250,8 @@ constraints += [ 0 <= b_Q ]
     ### Diesel generator ###
 
 #4 - Diesel generation capacity (power)
-constraints += [ 0 <= b_S,
-                b_S <= d_max ]
+constraints += [ 0 <= d_S,
+                d_S <= d_max ]
 
 #10 - Fuel equation
 #constraints += [ f[t]= f[t-1] - d_S * 0.08 ]
@@ -295,7 +295,7 @@ for jj in j_idx:
     i =  rho[jj]    
 
     # Line Power Flows- Constraint 21, this is wrong for our variables?
-    constraints += [P[i, jj] - (l_P[jj] - s_p.iloc[0,jj]) - r[jj]*L[i, jj] - [A[jj,:]@P[jj,:]]]
+    #constraints += [0 == P[i, jj] - (l_P[jj] - s_p.iloc[0,jj]) - r[jj]*L[i, jj] - [A[jj,:]@P[jj,:]]]
     #Missing constraint 22-24, similar variable confusion
 
 
@@ -303,15 +303,24 @@ for jj in j_idx:
 # Additional inequality constraints: 0jjmax
 
 # Define constraints
-b_S[n] = 0 #Constraint 15, no power stored - I think this needs modification to refer to the correct nodes. 
-F = l_S/D #Constraint 16, Fraction of load served
-l_S = s_s + b_S + d_S #Constraint 17a, total supply 
-l_P= s_p + b_S + d_S #Constraint 17b, real power supply
-l_Q= s_q + b_Q + d_Q #Constraint 17c, reactive power supply    
-j[t] = j[t-1] - b_S[t]*dt  #Constraint 18, time dimension of battery 
+constraints += [ b_S[0] == 0 ]#Constraint 15, no power stored - I think this needs modification to refer to the correct nodes.
+constraints += [ b_S[3] == 0 ]
+constraints += [ b_S[4] == 0 ]
+constraints += [ b_S[5] == 0 ]
+constraints += [ b_S[6] == 0 ]
+constraints += [ F == l_S/D_real_total.iloc[0,:] ] #Constraint 16, Fraction of load served
+constraints += [ l_S == s_s.iloc[0,:].values + b_S + d_S ] #Constraint 17a, total supply 
+constraints += [ l_P == s_p.iloc[0, :].values + b_S + d_S ] #Constraint 17b, real power supply
+constraints += [ l_Q == s_q.iloc[0, :].values + b_Q + d_Q ] #Constraint 17c, reactive power supply    
+#j[t] = j[t-1] - b_S[t]*dt  #Constraint 18, time dimension of battery 
 #j_0 = **choose initial value** A parameter?
-l_S[4] = D[4] #Constraint 20, medical baseline #are we keeping this constraint?
-l_S[5] = D[5] #Constraint 20, critical facility #are we keeping this constraint?
+constraints += [ l_S[4] == D_real_total.iloc[0,4] ]#Constraint 20, medical baseline #are we keeping this constraint?
+constraints += [ l_S[5] == D_real_total.iloc[0,5] ] #Constraint 20, critical facility #are we keeping this constraint?
 
 prob2 = Problem(objective, constraints)
 prob2.solve()
+print(prob2.status)
+print("Program Results : %4.2f"%(prob2.value))
+print(l_S.value)
+print(l_P.value)
+print(l_Q.value)
