@@ -83,8 +83,9 @@ plt.xlabel("Time (Hours)")
 plt.ylabel("Power (kW)")
 plt.legend();
 
+# %%
 # List of node indices
-i_idx = np.arange(8)
+j_idx = np.arange(8)
 
 ### Define microgrid parameters ###
 
@@ -107,7 +108,7 @@ D_reactive_critical = pd.DataFrame()
 D_reactive_remaining = pd.DataFrame()
 
 # Power demand [MW] at each node
-for x in i_idx:
+for x in j_idx:
 
     # Apparent power dataframes
     D_apparent_total["Node %1i"%x + " Total Apparent Power"] = D["Node %1i"%x + " (Apparent Power; Total)"]
@@ -147,17 +148,16 @@ s_q = s_s
 s_q.iloc[:,:] = 0
 
 # Maximum energy that batteries at nodes 1,2 and 7 can store (battery capacity)
-j_max = np.array([9.5, 9.5, 95])
+j_max = np.array([0, 9.5, 9.5, 0, 0, 0, 0, 95])
 
 # Maximum power discharge and charge rates
-bS_rating = np.array([[25, 25, 40],
-                      [25, 25, 40]])
+b_Srating = np.array([0, 25, 25, 0, 0, 0, 0, 40])
 
 # Maximum power that diesel generator can produce (kW)
 d_max = 20
 
 # Priority ranking of different customer categories (5=highest priority, 1=lowest)
-R = np.array([5, 4, 3, 2])
+R = np.array([0, 0, 0, 0, 5, 4, 3, 2])
 
 # Minimum nodal voltage
 V_min = 0.95
@@ -231,40 +231,45 @@ objective = Maximize(R.T@F)
 ### Define constraints. Numbering of constraints corresponds to report.
 constraints = []
 
-    ### Batteries
+     ### Batteries ###
 
 #1 - Battery energy availability
-constraints += [ 0 <= j <= jmax ]
+constraints += [ 0 <= j,
+                 j <= j_max ]
+
 #2 - Charge/discharge rating of battery
-constraints += [ -b_Srating <= b_S[b] <= b_Srating ]
+constraints += [ -b_Srating <= b_S,
+                b_S <= b_Srating ]
+
 #3 - Energy discharged <=energy available
-constraints += [ b_S*dt <=  j[t-1] ] 
+constraints += [ b_S <=  j ] 
+
 #7 - Battery can't store Q
 constraints += [ 0 <= b_Q ]
 
-    ### Diesel generator
+    ### Diesel generator ###
 
 #4 - Diesel generation capacity (power)
-constraints += [ 0 <= b_S[d] <= dmax ]
+constraints += [ 0 <= b_S,
+                b_S <= d_max ]
+
 #10 - Fuel equation
-constraints += [ f[t]= f[t-1] - d_S * 0.08 ]
+#constraints += [ f[t]= f[t-1] - d_S * 0.08 ]
+
 #11 - Cannot use more fuel than available
-constraints += [ d_S* 0.08 <= f[t] ]
-
-    ### Reactive/Active/Apparent power definitions at nodes
-
-constraints += [ norm(vstack([s_p[jj],s_q[jj]])) <= s_s[jj] ] #9 - solar p and q output tied to parameter input
-constraints += [ norm(vstack([b_P[jj],b_Q[jj]])) <= b_S[jj] ] #6 - batteries
-constraints += [ norm(vstack([l_P[jj],l_Q[jj]])) <= l_S[jj] ] #5 - demand
-constraints += [ norm(vstack([d_P[jj],d_Q[jj]])) <= d_S[jj] ] #8 - diesel generator 
-
+#constraints += [ d_S* 0.08 <= f[t] ]
+ 
+    
     ### Other
 
 #12 & 13 - Nodal voltage limits
-constraints += [v_min**2 - V <= 0, V - v_max**2 <= 0]
+constraints += [V_min**2 - V <= 0, 
+                V - V_max**2 <= 0]
 
 #14 - Squared line current limits
-constraints += [L - I_max**2 <= 0]
+for kk in j_idx:
+
+    constraints += [L[:,kk] - I_max**2 <= 0]
 
     ### Boundary conditions
 
@@ -280,11 +285,17 @@ constraints += [V[0] == 1]
 # Loop over each node
 for jj in j_idx:
     
+        ### Reactive/Active/Apparent power definitions at nodes ###
+    constraints += [ norm(vstack([s_p.iloc[:,jj],s_q.iloc[:,jj]])) <= s_s.iloc[:,jj] ] #9 - solar p and q output tied to parameter input
+    constraints += [ norm(vstack([b_P[jj],b_Q[jj]])) <= b_S[jj] ] #6 - batteries
+    constraints += [ norm(vstack([l_P[jj],l_Q[jj]])) <= l_S[jj] ] #5 - demand
+    constraints += [ norm(vstack([d_P[jj],d_Q[jj]])) <= d_S[jj] ] #8 - diesel generator
+
     # Parent node, i = \rho(j)
     i =  rho[jj]    
-    
+
     # Line Power Flows- Constraint 21, this is wrong for our variables?
-    constraints += [P[i, jj] - (l_P[jj] - s_p[jj]) - r[i, jj]*L[i, jj] - [A[jj,:]@P[jj,:]
+    constraints += [P[i, jj] - (l_P[jj] - s_p.iloc[0,jj]) - r[jj]*L[i, jj] - [A[jj,:]@P[jj,:]]]
     #Missing constraint 22-24, similar variable confusion
 
 
@@ -301,3 +312,6 @@ j[t] = j[t-1] - b_S[t]*dt  #Constraint 18, time dimension of battery
 #j_0 = **choose initial value** A parameter?
 l_S[4] = D[4] #Constraint 20, medical baseline #are we keeping this constraint?
 l_S[5] = D[5] #Constraint 20, critical facility #are we keeping this constraint?
+
+prob2 = Problem(objective, constraints)
+prob2.solve()
