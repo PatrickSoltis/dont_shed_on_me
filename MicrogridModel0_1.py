@@ -54,14 +54,14 @@ s_S = np.array([zeros, hourly_gen, hourly_gen, zeros, zeros, zeros, zeros, zeros
 
 #4 - battery energy (batteries at nodes 1 & 2, EV at 7)
 j_max = np.array([0, 9.5, 9.5, 0, 0, 0, 0, 95])
-j_start = np.array([0, 4.0, 4.0, 0, 0, 0, 0, 40]) #arbitrarily chosen values
+j_start = np.array([0, 2.0, 2.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #5 - diesel fuel (diesel generator at node 3)
-f_start = np.array([0, 0, 20.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
+f_start = np.array([0, 0, 8.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #6 - power ratings
 b_rating = np.array([0, 8, 8, 0, 0, 0, 0, 40]) #battery
-d_rating = np.array([0, 0, 10, 0, 0, 0, 0, 0])
+d_rating = np.array([0, 0, 4.0, 0, 0, 0, 0, 0])
 
 #7 - power factors (currently is implicit 0.95 in D_df columns)
 #pf = np.full((1,8), 0.95)
@@ -119,7 +119,8 @@ nu_b = 1 #battery
 #Variable shape: (rows, columns)
 
 #1 - Fraction of load served
-F = Variable((len_t,8))
+#F = Variable((len_t,8))
+F_P = Variable((len_t,8))
 
 #2 - Load supplied (apparent, real, reactive)
 l_S = Variable((len_t,8))
@@ -170,7 +171,7 @@ L = Variable((8,8,t)) #squared magnitude of complex current
 
 # %% Define objective function
 
-objective = Maximize( sum(F@R.T) )
+objective = Maximize( sum(F_P@R.T) )
 
 # %% Constraints 0
 
@@ -195,15 +196,16 @@ for node in no_generator:
     constraints += [ d_S[:, node] == 0 ]
 
 #3 - Define fraction of load served (may need to loop?)
-constraints += [ F == l_S/D ]
+#constraints += [ F == l_S/D ]
+constraints += [ F_P == l_P/D_P ]
 
 #4 - Guarantee full load for critical nodes
 critical = [4, 5]
 for node in critical:
-    constraints += [ F[:, node] == 1. ]
+    constraints += [ F_P[:, node] == 1. ]
 
 #4.x - Power delivered cannot exceed demand
-constraints += [ l_S <= D ]
+constraints += [ l_P <= D_P ]
 #Need to limit apparent power. In Homework, it was done this way:
 #constraints = [ s <= s_max ]
 #where s is apparent power generated at each node, and s was generator limit
@@ -294,7 +296,7 @@ print(prob.value)
 for t in range(len_t):
     print("Time %3.0f"%(t))
     for jj in j_idx:
-        print("Node %2.0f fraction served: %1.3f"%(jj, F[t,jj].value))
+        print("Node %2.0f fraction served: %1.3f"%(jj, F_P[t,jj].value))
 
 
 # %%
