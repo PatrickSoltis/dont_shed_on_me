@@ -24,8 +24,8 @@ R = np.array([[0, 0, 0, 0, 5, 4, 3, 2]])
 # They will only be used in constraints at a single time.
 
 #Select hour numbers to use from load and solar data
-t0 = 12
-len_t = 1
+t0 = 0
+len_t = 240
 
 #2 - Load total power for each node into D
 D = D_df.iloc[t0:t0+len_t, [1,10,19,28,37,46,55,64]].to_numpy()
@@ -47,21 +47,21 @@ for item in D_df.columns:
 
 #3 - solar PV generation
 month = 'June' #select month of solar data (June/September/December)
-hourly_gen = np.array(solar[month+' (kW)'].values)
+hourly_gen = np.array(solar[month+' (kW)'].values[t0:t0+len_t])
 zeros = np.zeros(len_t)
 s_S = np.array([zeros, hourly_gen, hourly_gen, zeros, zeros, zeros, zeros, zeros]).T
 #Index as: s_S[hour number, node number]
 
 #4 - battery energy (batteries at nodes 1 & 2)
-j_max = np.array([0, 9.5, 9.5, 0, 0, 0, 0, 95])
-j_start = np.array([0, 8.0, 8.0, 0, 0, 0, 0, 40]) #arbitrarily chosen values
+j_max = np.array([0, 0.5, 0.5, 0, 0, 0, 0, 95])
+j_start = np.array([0, 2.0, 2.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #5 - diesel fuel (diesel generator at node 3)
-f_start = np.array([0, 0, 20, 0, 0, 0, 0, 0]) #arbitrarily chosen values
+f_start = np.array([0, 0, 10, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #6 - power ratings
-b_rating = np.array([0, 25, 25, 0, 0, 0, 0, 40]) #battery
-d_rating = np.array([0, 0, 10, 0, 0, 0, 0, 0])
+b_rating = np.array([0, 2.5, 2.5, 0, 0, 0, 0, 40]) #battery
+d_rating = np.array([0, 0, 1, 0, 0, 0, 0, 0])
 
 #7 - power factors (currently is implicit 0.95 in D_df columns)
 #pf = np.full((1,8), 0.95)
@@ -163,8 +163,10 @@ L = Variable((8,8,t)) #squared magnitude of complex current
 
 # %% Define objective function
 
-objective = Maximize( sum(R.T@F) )
+objective = Maximize( sum(F@R.T) )
 
+#%%
+F.shape
 # %% Constraints 0
 
 #Nothing between node 0 and itself
@@ -199,16 +201,16 @@ for node in critical:
 #5 - Battery state of charge
 constraints += [ j[0] == j_start ]
 if len_t > 1:
-    for t in range(len_t):
-        constraints += [ j[t+1] == j[t] - b_S[t]*dt]
+    for t in range(1,len_t):
+        constraints += [ j[t] == j[t-1] - b_S[t-1]*dt]
 for t in range(len_t):
     constraints += [ 0 <= j[t], j[t] <= j_max]
 
 #6 - Fuel stock
 constraints += [ f[0] == f_start ]
 if len_t > 1:
-    for t in range(len_t):
-        constraints += [ f[t+1] == f[t] - d_S[t]*dt ]
+    for t in range(1, len_t):
+        constraints += [ f[t] == f[t-1] - d_S[t-1]*dt ]
 
 # %% Constraints C (7-9, 14)
 
@@ -230,9 +232,6 @@ for t in range(len_t):
         constraints += [ norm(vstack([p[t,jj],q[t,jj]])) <= s[t,jj] ]
         #Homework only checked this relationship generation, this is for net power
 
-# %%
-
-D[1]
 # %% Constraints D (10)
 
 #10 - Battery and solar only emit real power
@@ -252,9 +251,9 @@ for t in range(len_t):
 
 #13 - Battery or generator does not discharge more than available
 if len_t > 1:
-    for t in range(len_t):
-        constraints += [ b_S[t+1]*dt <= j[t] ]
-        constraints += [ d_S[t+1]*dt <= f[t] ]
+    for t in range(1, len_t):
+        constraints += [ b_S[t]*dt <= j[t-1] ]
+        constraints += [ d_S[t]*dt <= f[t-1] ]
 
 # %% Constraints F (15-16)
 
@@ -264,5 +263,13 @@ for t in range(len_t):
     constraints += [ V_min**2 <= V[t], V[t] <= V_max**2 ]
 
 #16 - Current limit
-constraints += [ L[t] <= I_max ]
+constraints += [ L[t] <= I_max**2 ]
+
+# %%
+prob = Problem(objective, constraints)
+prob.solve()
+print(prob.status)
+#%%
+print(np.sum(s_S))
+print(np.sum(D))
 # %%
