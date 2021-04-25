@@ -251,10 +251,10 @@ constraints += [ s_P == s_S ]
 constraints += [ b_P == b_S ]
 
 '''
-#Demanding equal generation and consumption at each node makes problem infeasible.
-constraints += [ l_S == s_S+b_S+d_S]
-constraints += [ l_P == s_P+b_P+d_P]
-constraints += [ l_Q == s_Q+b_Q+d_Q]
+#Tried with sums
+constraints += [ sum(l_S) <= sum(s_S)+sum(b_S)+sum(d_S)]
+constraints += [ sum(l_P) <= sum(s_P)+sum(b_P)+sum(d_P)]
+constraints += [ sum(l_Q) <= sum(s_Q)+sum(b_Q)+d_Q]
 '''
 
 # %% Constraints E (11-13)
