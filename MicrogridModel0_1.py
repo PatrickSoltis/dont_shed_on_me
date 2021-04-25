@@ -221,7 +221,7 @@ j= Variable(8) #battery state of charge
 # power flow between nodes
 P = Variable((8, 8))
 Q = Variable((8, 8))
-L = Variable((8,8))
+L = Variable((8, 8))
 
 # %%
 ### Define objective function
@@ -295,7 +295,7 @@ for jj in j_idx:
     i =  rho[jj]    
 
     # Line Power Flows- Constraint 21, this is wrong for our variables?
-    #constraints += [0 == P[i, jj] - (l_P[jj] - s_p.iloc[0,jj]) - r[jj]*L[i, jj] - [A[jj,:]@P[jj,:]]]
+    constraints += [0 == P[i, jj] - (l_P[jj] - s_p.iloc[0,jj] - d_S) - r[jj]*L[i, jj] - [A[jj,:]@P[jj,:]]]
     #Missing constraint 22-24, similar variable confusion
 
 
