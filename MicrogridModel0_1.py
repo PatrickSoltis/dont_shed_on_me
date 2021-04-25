@@ -19,7 +19,9 @@ solar = pd.read_csv('solar_import.csv')
 D_df = pd.read_csv('nodes.csv')
 
 #1 - Value ranking of different customer categories (5=highest priority, 1=lowest)
-R = np.array([[0,0,0,0,5,4,3,2]])
+R = np.array([[0, 0, 0, 0, 5, 4, 3, 2]])
+#Remaining length-8 arrays are only 1 dimension. 
+# They will only be used in constraints at a single time.
 
 #2 - Load total power for each node into D
 D = D_df.iloc[:,[1,10,19,28,37,46,55,64]].to_numpy()
@@ -101,50 +103,51 @@ nu_b = 1 #battery
 #Note values are not yet built into constraints
 
 # %% Optimization Variables
+#Variable shape: (rows, columns)
 
 #Define number of time steps
 t = 1
 
 #1 - Fraction of load served
-F = Variable((8,t))
+F = Variable((t,8))
 
 #2 - Load supplied (apparent, real, reactive)
-l_S = Variable((8,t))
-l_P = Variable((8,t))
-l_Q = Variable((8,t))
+l_S = Variable((t,8))
+l_P = Variable((t,8))
+l_Q = Variable((t,8))
 
 #3 - Battery power dispatched (+) or stored (-)
-b_S = Variable((8,t))
-b_P = Variable((8,t))
-b_Q = Variable((8,t))
+b_S = Variable((t,8))
+b_P = Variable((t,8))
+b_Q = Variable((t,8))
 
 #4 - Diesel power generated
-d_S = Variable((8,t))
-d_P = Variable((8,t))
-d_Q = Variable((8,t))
+d_S = Variable((t,8))
+d_P = Variable((t,8))
+d_Q = Variable((t,8))
 
 #5 - Solar power (real and reactive)
-s_P = Variable((8,t))
-s_Q = Variable((8,t))
+s_P = Variable((t,8))
+s_Q = Variable((t,8))
 #Currently solar only provides real power: s_P = s_S (in constraints)
 #So these are duplicative, but relevant if modeling inverter that can provide P and Q
 
 #6 - Net power
-s = Variable((8,t))
-p = Variable((8,t))
-q = Variable((8,t))
+s = Variable((t,8))
+p = Variable((t,8))
+q = Variable((t,8))
 
 #7 - Voltage
-V = Variable((8,t))
+V = Variable((t,8))
 
 #8 - Energy stock
-j = Variable((8,t)) #Battery state of charge
-f = Variable((8,t)) #Diesel fuel available
+j = Variable((t,8)) #Battery state of charge
+f = Variable((t,8)) #Diesel fuel available
 
 #9-11 - Line variable
-P = Variable((8,t)) #active power flow
-Q = Variable((8,t)) #reactive power flow
-L = Variable((8,t)) #squared magnitude of complex current
+P = Variable((t,8)) #active power flow
+Q = Variable((t,8)) #reactive power flow
+L = Variable((t,8)) #squared magnitude of complex current
 
 '''
 #9-11 - Line  variables
@@ -155,4 +158,8 @@ L = Variable((8,8,t)) #squared magnitude of complex current
 # Alternative version (above) squeezes into 2 dimensions since all nodes 1-7 have parent 0. 
 '''
 
-# %%
+# %% Define objective function
+
+objective = Maximize( sum(R.T@F) )
+
+# %% 
