@@ -24,8 +24,8 @@ R = np.array([[0, 0, 0, 0, 5, 4, 3, 2]])
 # They will only be used in constraints at a single time.
 
 #Select hour numbers to use from load and solar data
-t0 = 0
-len_t = 240
+t0 = 12
+len_t = 1
 
 #2 - Load total power for each node into D
 D = D_df.iloc[t0:t0+len_t, [1,10,19,28,37,46,55,64]].to_numpy()
@@ -52,16 +52,16 @@ zeros = np.zeros(len_t)
 s_S = np.array([zeros, hourly_gen, hourly_gen, zeros, zeros, zeros, zeros, zeros]).T
 #Index as: s_S[hour number, node number]
 
-#4 - battery energy (batteries at nodes 1 & 2)
-j_max = np.array([0, 0.5, 0.5, 0, 0, 0, 0, 95])
-j_start = np.array([0, 2.0, 2.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
+#4 - battery energy (batteries at nodes 1 & 2, EV at 7)
+j_max = np.array([0, 9.5, 9.5, 0, 0, 0, 0, 95])
+j_start = np.array([0, 4.0, 4.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #5 - diesel fuel (diesel generator at node 3)
-f_start = np.array([0, 0, 10, 0, 0, 0, 0, 0]) #arbitrarily chosen values
+f_start = np.array([0, 0, 20, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #6 - power ratings
-b_rating = np.array([0, 2.5, 2.5, 0, 0, 0, 0, 40]) #battery
-d_rating = np.array([0, 0, 1, 0, 0, 0, 0, 0])
+b_rating = np.array([0, 8, 8, 0, 0, 0, 0, 40]) #battery
+d_rating = np.array([0, 0, 20, 0, 0, 0, 0, 0])
 
 #7 - power factors (currently is implicit 0.95 in D_df columns)
 #pf = np.full((1,8), 0.95)
@@ -165,8 +165,6 @@ L = Variable((8,8,t)) #squared magnitude of complex current
 
 objective = Maximize( sum(F@R.T) )
 
-#%%
-F.shape
 # %% Constraints 0
 
 #Nothing between node 0 and itself
@@ -195,6 +193,12 @@ constraints += [ F == l_S/D ]
 critical = [4, 5]
 for node in critical:
     constraints += [ F[:, node] == 1. ]
+
+#4.x - Power delivered cannot exceed demand
+constraints += [ l_S <= D ]
+#Need to limit apparent power. In Homework, it was done this way:
+#constraints = [ s <= s_max ]
+#where s is apparent power generated at each node, and s was generator limit
 
 # %% Constraints B (5-6)
 
@@ -269,6 +273,7 @@ constraints += [ L[t] <= I_max**2 ]
 prob = Problem(objective, constraints)
 prob.solve()
 print(prob.status)
+print(prob.value)
 #%%
 print(np.sum(s_S))
 print(np.sum(D))
