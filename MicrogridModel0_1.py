@@ -54,14 +54,14 @@ s_S = np.array([zeros, hourly_gen, hourly_gen, zeros, zeros, zeros, zeros, zeros
 
 #4 - battery energy (batteries at nodes 1 & 2, EV at 7)
 j_max = np.array([0, 9.5, 9.5, 0, 0, 0, 0, 95])
-j_start = np.array([0, 4.0, 4.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
+j_start = np.array([0, 4.0, 4.0, 0, 0, 0, 0, 40]) #arbitrarily chosen values
 
 #5 - diesel fuel (diesel generator at node 3)
-f_start = np.array([0, 0, 20, 0, 0, 0, 0, 0]) #arbitrarily chosen values
+f_start = np.array([0, 0, 20.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #6 - power ratings
 b_rating = np.array([0, 8, 8, 0, 0, 0, 0, 40]) #battery
-d_rating = np.array([0, 0, 20, 0, 0, 0, 0, 0])
+d_rating = np.array([0, 0, 10, 0, 0, 0, 0, 0])
 
 #7 - power factors (currently is implicit 0.95 in D_df columns)
 #pf = np.full((1,8), 0.95)
@@ -69,6 +69,13 @@ d_rating = np.array([0, 0, 20, 0, 0, 0, 0, 0])
 #8 - voltage limits
 V_min = 0.95
 V_max = 1.05
+
+# %% Check available energy
+print('D:',np.sum(D))
+print('s_S:',np.sum(s_S))
+print('j_start:',np.sum(j_start))
+print('f_start:',np.sum(f_start))
+print('energy available:',np.sum([np.sum(s_S),np.sum(j_start),np.sum(f_start)]))
 
 # %% Parameters C (9-11)
 
@@ -177,6 +184,7 @@ constraints += [ V[0] == 1 ]
 #1 - Net power consumed at each node
 constraints += [ p == l_P-b_P-d_P-s_P ]
 constraints += [ q == l_Q-b_Q-d_Q-s_Q ]
+constraints += [ s == l_S-b_S-d_S-s_S ]
 
 #2 - No phantom batteries or generators
 no_batteries = [0, 3, 4, 5, 6, 7]
@@ -242,6 +250,13 @@ for t in range(len_t):
 constraints += [ s_P == s_S ]
 constraints += [ b_P == b_S ]
 
+'''
+#Demanding equal generation and consumption at each node makes problem infeasible.
+constraints += [ l_S == s_S+b_S+d_S]
+constraints += [ l_P == s_P+b_P+d_P]
+constraints += [ l_Q == s_Q+b_Q+d_Q]
+'''
+
 # %% Constraints E (11-13)
 
 for t in range(len_t):
@@ -274,7 +289,12 @@ prob = Problem(objective, constraints)
 prob.solve()
 print(prob.status)
 print(prob.value)
-#%%
-print(np.sum(s_S))
-print(np.sum(D))
+
+# %%
+for t in range(len_t):
+    print("Time %3.0f"%(t))
+    for jj in j_idx:
+        print("Node %2.0f fraction served: %1.3f"%(jj, F[t,jj].value))
+
+
 # %%
