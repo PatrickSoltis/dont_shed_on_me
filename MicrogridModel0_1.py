@@ -258,7 +258,6 @@ constraints += [ l_S == s_S+b_S+d_S]
 constraints += [ l_P == s_P+b_P+d_P]
 constraints += [ l_Q == s_Q+b_Q+d_Q]
 '''
-
 # %% Constraints E (11-13)
 
 for t in range(len_t):
