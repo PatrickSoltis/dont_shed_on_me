@@ -4,7 +4,7 @@ import matplotlib.pyplot as pyplot
 from cvxpy import *
 import pandas as pd
 
-#%% Data Imports
+#%% Data Imports!
 
 #Apparent power values assume pf=0.95
 office = pd.read_csv('SF_Office_import.csv') #Office building - not used in model
