@@ -57,11 +57,11 @@ j_max = np.array([0, 9.5, 9.5, 0, 0, 0, 0, 95])
 j_start = np.array([0, 2.0, 2.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #5 - diesel fuel (diesel generator at node 3)
-f_start = np.array([0, 0, 8.0, 0, 0, 0, 0, 0]) #arbitrarily chosen values
+f_start = np.array([0, 0, 0, 8.0, 0, 0, 0, 0]) #arbitrarily chosen values
 
 #6 - power ratings
-b_rating = np.array([0, 8, 8, 0, 0, 0, 0, 40]) #battery
-d_rating = np.array([0, 0, 4.0, 0, 0, 0, 0, 0])
+b_rating = np.array([0, 8.0, 8.0, 0, 0, 0, 0, 40]) #battery
+d_rating = np.array([0, 0, 0, 8.0, 0, 0, 0, 0])
 
 #7 - power factors (currently is implicit 0.95 in D_df columns)
 #pf = np.full((1,8), 0.95)
@@ -89,7 +89,7 @@ x = np.array([0,0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
 I_max = np.array([0,1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2])
 
 #11 - Adjacency matrix
-A = np.array([[1, 1, 1, 1, 1, 1, 1, 1],
+A = np.array([[0, 1, 1, 1, 1, 1, 1, 1],
               [0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0],
@@ -123,30 +123,33 @@ nu_b = 1 #battery
 F_P = Variable((len_t,8))
 
 #2 - Load supplied (apparent, real, reactive)
-l_S = Variable((len_t,8))
+#l_S = Variable((len_t,8))
 l_P = Variable((len_t,8))
 l_Q = Variable((len_t,8))
 
 #3 - Battery power dispatched (+) or stored (-)
-b_S = Variable((len_t,8))
-b_P = Variable((len_t,8))
-b_Q = Variable((len_t,8))
+b_gen = Variable((len_t,8)) #apparent power term
+b_eat = Variable((len_t,8)) #real power term
+#b_Q = Variable((len_t,8))
 
 #4 - Diesel power generated
 d_S = Variable((len_t,8))
-d_P = Variable((len_t,8))
-d_Q = Variable((len_t,8))
+#d_P = Variable((len_t,8))
+#d_Q = Variable((len_t,8))
+#Only want s term for generation
 
 #5 - Solar power (real and reactive)
-s_P = Variable((len_t,8))
-s_Q = Variable((len_t,8))
+#s_P = Variable((len_t,8))
+#s_Q = Variable((len_t,8))
 #Currently solar only provides real power: s_P = s_S (in constraints)
 #So these are duplicative, but relevant if modeling inverter that can provide P and Q
+#Only want s in generation
 
 #6 - Net power
 s = Variable((len_t,8))
 p = Variable((len_t,8))
 q = Variable((len_t,8))
+s_max = Variable((len_t,8))
 
 #7 - Voltage
 V = Variable((len_t,8))
@@ -182,32 +185,37 @@ constraints += [ V[0] == 1 ]
 
 # %% Constraints A (1-4)
 
-#1 - Net power consumed at each node
-constraints += [ p == l_P-b_P-d_P-s_P ]
-constraints += [ q == l_Q-b_Q-d_Q-s_Q ]
-constraints += [ s == l_S-b_S-d_S-s_S ]
+#1 - Net power generated at each node
+#constraints += [ p == d_P+s_P ]
+#constraints += [ q == b_Q+d_Q+s_Q ]
+constraints += [ s_max == b_gen+d_S+s_S ]
 
 #2 - No phantom batteries or generators
-no_batteries = [0, 3, 4, 5, 6, 7]
+no_batteries = [0, 3, 4, 5, 6]
 no_generator = [0, 1, 2, 4, 5, 6, 7]
+no_load = [0, 1, 2, 3]
 for node in no_batteries:
-    constraints += [ b_S[:, node] == 0 ]
+    constraints += [ b_gen[:, node] == 0 ]
+    constraints += [ b_eat[:, node] == 0 ]
 for node in no_generator:
     constraints += [ d_S[:, node] == 0 ]
+for node in no_load:
+    constraints += [ l_P[:, node] == 0 ]
+    constraints += [ l_Q[:, node] == 0]
 
 #3 - Define fraction of load served (may need to loop?)
 #constraints += [ F == l_S/D ]
 constraints += [ F_P == l_P/D_P ]
 
-#4 - Guarantee full load for critical nodes
-critical = [4, 5]
-for node in critical:
-    constraints += [ F_P[:, node] == 1. ]
+#4 - Guarantee full load for critical nodes - remove for initial run
+#critical = [4, 5]
+#for node in critical:
+#    constraints += [ F_P[:, node] == 1. ]
 
 #4.x - Power delivered cannot exceed demand
-constraints += [ l_P <= D_P ]
+constraints += [ l_P <= D_P ] #try without this first
 #Need to limit apparent power. In Homework, it was done this way:
-#constraints = [ s <= s_max ]
+constraints += [ s <= s_max ]
 #where s is apparent power generated at each node, and s was generator limit
 
 # %% Constraints B (5-6)
@@ -216,7 +224,7 @@ constraints += [ l_P <= D_P ]
 constraints += [ j[0] == j_start ]
 if len_t > 1:
     for t in range(1,len_t):
-        constraints += [ j[t] == j[t-1] - b_S[t-1]*dt]
+        constraints += [ j[t] == j[t-1] - b_gen[t-1]*dt + b_eat[t-1] ]
 for t in range(len_t):
     constraints += [ 0 <= j[t], j[t] <= j_max]
 
@@ -233,8 +241,8 @@ for t in range(len_t):
         i = rho[jj]
 
         #7 - DistFlow equations
-        constraints += [ P[t,jj] == p[t,jj] + r[jj]*L[t,jj] + A[jj]@P[t,:] ]
-        constraints += [ Q[t,jj] == q[t,jj] + x[jj]*L[t,jj] + A[jj]@Q[t,:] ]
+        constraints += [ P[t,jj] == l_P[t,jj] + b_eat[t,jj] - p[t,jj] + r[jj]*L[t,jj] + A[jj]@P[t,:] ]
+        constraints += [ Q[t,jj] == l_Q[t,jj] - q[t,jj] + x[jj]*L[t,jj] + A[jj]@Q[t,:] ]
 
         #8 - Voltage drop
         constraints += [ V[t,jj] - V[t,i] == (r[jj]**2 + x[jj]**2)*L[t,jj] - 2*(r[jj]*P[t,jj].T + x[jj]*Q[t,jj].T) ]
@@ -249,8 +257,8 @@ for t in range(len_t):
 # %% Constraints D (10)
 
 #10 - Battery and solar only emit real power
-constraints += [ s_P == s_S ]
-constraints += [ b_P == b_S ]
+#constraints += [ s_P == s_S ]
+#constraints += [ b_P == b_S ]
 
 '''
 #Demanding equal generation and consumption at each node makes problem infeasible.
@@ -263,17 +271,21 @@ constraints += [ l_Q == s_Q+b_Q+d_Q]
 for t in range(len_t):
     
     #11 - Battery (dis)charging limit
-    constraints += [ -b_rating <= b_S[t], b_S[t] <= b_rating ]
-    constraints += [ 0 <= b_Q[t] ]
+    constraints += [ 0 <= b_gen[t], b_gen[t] <= b_rating ] #discharging
+    constraints += [ 0 <= b_eat[t], b_eat[t] <= b_rating]
+    #constraints += [ 0 <= b_Q[t] ] #b_Q now nonexistent
 
     #12 - Generator output limit
-    constraints += [ b_S[t] <= d_rating ]
+    constraints += [ 0 <= d_S[t], d_S[t] <= d_rating ]
 
 #13 - Battery or generator does not discharge more than available
 if len_t > 1:
     for t in range(1, len_t):
-        constraints += [ b_S[t]*dt <= j[t-1] ]
+        constraints += [ b_gen[t]*dt <= j[t-1] ]
         constraints += [ d_S[t]*dt <= f[t-1] ]
+else: #From Maya's version - when len_t = 1
+    constraints += [ b_gen[0]*dt <= j_start ]
+    constraints += [ d_S[0]*dt <= f_start ]
 
 # %% Constraints F (15-16)
 
@@ -298,4 +310,44 @@ for t in range(len_t):
         print("Node %2.0f fraction served: %1.3f"%(jj, F_P[t,jj].value))
 
 
+# %%
+for t in range(len_t):
+    print("Time %3.0f"%(t))
+    for jj in j_idx:
+        print("Node %2.0f: l_P: %1.3f\t l_Q:%1.3f"%(jj, l_P[t,jj].value, l_Q[t,jj].value))
+# %%
+for t in range(len_t):
+    print("Time %3.0f"%(t))
+    for jj in j_idx:
+        print("Node %2.0f demand: %1.3f"%(jj, D_P[t,jj]))
+# %%
+for t in range(len_t):
+    print("Time %3.0f Battery"%(t))
+    for jj in j_idx:
+        print("Node %2.0f j: %1.3f\tb_gen: %1.3f\tb_eat: %1.3f"%(jj, j[t,jj].value, b_gen[t,jj].value, b_eat[t,jj].value))
+# %%
+for t in range(len_t):
+    print("Time %3.0f Generation"%(t))
+    for jj in j_idx:
+        print("Node %2.0f s_S: %1.3f\td_S: %1.3f\tf: %1.3f"%(jj, s_S[t,jj], d_S[t,jj].value, f[t,jj].value))
+# %%
+for t in range(len_t):
+    print("Time %3.0f Power"%(t))
+    for jj in j_idx:
+        print("Node %2.0f s: %1.3f\ts_max: %1.3f"%(jj, s[t,jj].value, s[t,jj].value))
+# %%
+for t in range(len_t):
+    print("Time %3.0f Power intermediates"%(t))
+    for jj in j_idx:
+        print("Node %2.0f p: %1.3f\tq: %1.3f"%(jj, p[t,jj].value, q[t,jj].value))
+# %%
+for t in range(len_t):
+    print("Time %3.0f Voltage"%(t))
+    for jj in j_idx:
+        print("Node %2.0f V: %1.3f"%(jj, V[t,jj].value))
+# %%
+for t in range(len_t):
+    print("Time %3.0f Lines: 0 to node:"%(t))
+    for jj in j_idx:
+        print("%2.0f P: %1.3f\tQ: %1.3f\tL: %1.3f"%(jj, P[t,jj].value, Q[t,jj].value, L[t,jj].value))
 # %%
