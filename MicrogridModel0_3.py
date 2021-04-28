@@ -381,7 +381,7 @@ def plots(supp, batt, solar, diesel, title, ylabel):
     row_mask = (data<0)
     cumulated_data[row_mask] = cumulated_data_neg[row_mask]
     data_stack = cumulated_data
-    labels = ["Power Supplied", "Battery", "Solar PV", "Diesel Generator"]
+    labels = ["Power Demand", "Battery", "Solar PV", "Diesel Generator"]
     fig = plt.figure()
     ax = plt.subplot(111)
     for i in np.arange(0, data_shape[0]):
