@@ -115,7 +115,10 @@ d_S = Variable((len_t,8))
 #5 - Solar power (real and reactive)
 #s_P = Variable((len_t,8))
 #s_Q = Variable((len_t,8))
-#Solar input currently in terms of reactive power (S), but can create real and reactive variables to track split or constrain to full real power output.
+#b_P = Variable((len_t,8))
+#b_Q = Variable((len_t,8))
+#Solar and battery terms input currently in terms of reactive power (S),
+#but can create real and reactive variables to track split or constrain to full real power output.
 
 #6 - Net power
 s = Variable((len_t,8))
@@ -208,17 +211,37 @@ for t in range(len_t):
         constraints += [ norm(vstack([p[t,jj],q[t,jj]])) <= s[t,jj] ]
         #Homework only checked this relationship generation, this is for net power
 
-# %% Constraints D (10)
+# %% Constraints D (10-12)
 
 #10 - Battery and solar only emit real power
-#constraints += [ s_P == s_S ] #s_P term commented out
-#constraints += [ b_P == b_gen ] #b_P term nonexistent
+#constraints += [ s_P == s_S ]
+#constraints += [ b_P == b_gen ]
+#s_P and b_P terms currently commented out
 
-
-# %% Add to later block
 #11 - Power delivered cannot exceed demand
 constraints += [ l_P <= D_P, 0 <= l_P ] #try without this first
 
 #12 - Need to limit apparent power
 constraints += [ s <= s_max ]
-#where s is apparent power generated at each node, and s was generator limit
+#where s is apparent power generated at each node, and s is theoretical capacity
+
+# %% Constraints E (13-15)
+
+for t in range(len_t):
+    
+    #13 - Battery (dis)charging limit
+    constraints += [ 0 <= b_gen[t], b_gen[t] <= b_rating ] #discharging
+    constraints += [ 0 <= b_eat[t], b_eat[t] <= b_rating] #charging
+    #constraints += [ 0 <= b_Q[t] ] #b_Q commented out
+
+    #14 - Generator output limit
+    constraints += [ 0 <= d_S[t], d_S[t] <= d_rating ]
+
+#15 - Battery or generator does not discharge more than available
+if len_t > 1:
+    for t in range(1, len_t):
+        constraints += [ b_gen[t]*dt <= j[t-1] ]
+        constraints += [ d_S[t]*dt <= f[t-1] ]
+else:
+    constraints += [ b_gen[0]*dt <= j_start ]
+    constraints += [ d_S[0]*dt <= f_start ]
