@@ -1,6 +1,6 @@
 #%%
 import numpy as np
-import matplotlib.pyplot as pyplot
+import matplotlib.pyplot as plt
 from cvxpy import *
 import pandas as pd
 
@@ -262,3 +262,84 @@ prob = Problem(objective, constraints)
 prob.solve()
 print(prob.status)
 print(prob.value)
+
+# %% OUTPUTS A - Dataframe of outputs (for a single time step)
+
+# Create dataframe of outputs (for a single time step)
+time_step = 0
+outputs = pd.DataFrame({'App Demand':D[time_step],'App Battery Gen':b_gen.value[time_step], 
+                        'App Solar': s_S[time_step],'App Diesel':d_S.value[time_step], 
+                        'Active Demand':D_P[time_step], 'Active Supply': l_P.value[time_step], 
+                        'Active Battery': b_eat.value[time_step],'Reactive Demand': D_Q[time_step], 
+                        'Reactive Supply': l_Q.value[time_step]},                       
+                         dtype = float)
+#'App Supply':l_S.value[0], 'Active Solar':s_P.value[0], 'Active Diesel': d_P.value[0], 
+#'Reactive Battery':b_Q.value[0],'Reactive Solar': s_Q.value[0], 'Reactive Diesel': d_Q.value[0]}, 
+outputs = outputs.round(2)
+outputs
+
+# %% OUTPUTS B - Cleaning and Plotting Functions
+
+# Define function to take negative and positive data apart and cumulate
+def get_cumulated_array(data, **kwargs):
+    cum_arr = data.clip(**kwargs)
+    cum_arr = np.cumsum(cum_arr, axis=0)
+    d = np.zeros(np.shape(data))
+    d[1:] = cum_arr[:-1]
+    return d  
+
+# Define function to create plots
+import matplotlib.pyplot as plt
+def plots(supp, batt, solar, diesel, title, ylabel):
+    data = np.array([-supp, batt, solar, diesel])
+    data_shape = np.shape(data)
+    cumulated_data = get_cumulated_array(data, min=0)
+    cumulated_data_neg = get_cumulated_array(data, max=0)
+    row_mask = (data<0)
+    cumulated_data[row_mask] = cumulated_data_neg[row_mask]
+    data_stack = cumulated_data
+    labels = ["Power Demand", "Battery", "Solar PV", "Diesel Generator"]
+    fig = plt.figure()
+    ax = plt.subplot(111)
+    for i in np.arange(0, data_shape[0]):
+        ax.bar(np.arange(data_shape[1]), data[i], bottom=data_stack[i], label=labels[i],)
+    plt.axhline(color = 'black', linewidth = 0.5)
+    plt.legend()
+    plt.title(title)
+    plt.ylabel(ylabel)
+    plt.xlabel('Node')
+    maxes = [np.max(cumulated_data), np.max(data)]
+    plt.ylim(top = np.max(maxes)+2)
+    plt.show()
+
+#Generate plots using function
+plots(outputs['App Demand'], outputs['App Battery Gen'], outputs['App Solar'], outputs['App Diesel'], 
+      'Apparent Power', 'Apparent Power [kVA]')
+
+# %% OUTPUTS C - Plot Active Power
+
+supp = outputs['Active Supply']
+batt = outputs['Active Battery']
+title = 'Active Power'
+ylabel = 'Active Power [kW]'
+
+data = np.array([-supp, batt])
+data_shape = np.shape(data)
+cumulated_data = get_cumulated_array(data, min=0)
+cumulated_data_neg = get_cumulated_array(data, max=0)
+row_mask = (data<0)
+cumulated_data[row_mask] = cumulated_data_neg[row_mask]
+data_stack = cumulated_data
+labels = ["Power Supplied", "Battery", "Solar PV", "Diesel Generator"]
+fig = plt.figure()
+ax = plt.subplot(111)
+for i in np.arange(0, data_shape[0]):
+    ax.bar(np.arange(data_shape[1]), data[i], bottom=data_stack[i], label=labels[i],)
+plt.axhline(color = 'black', linewidth = 0.5)
+plt.legend()
+plt.title(title)
+plt.ylabel(ylabel)
+plt.xlabel('Node')
+maxes = [np.max(cumulated_data), np.max(data)]
+plt.ylim(top = np.max(maxes)+2)
+plt.show()
