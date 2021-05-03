@@ -94,3 +94,49 @@ nu_s = 1 #solar
 nu_b = 1 #battery
 #These values are not yet built into constraints. 
 #No efficiency value for generator because we assume generator energy already accounts for efficiency losses.
+
+# %% Optimization Variables
+#Variable shape: (rows, columns)
+
+#1 - Fraction of load served
+#F = Variable((len_t,8))
+F_P = Variable((len_t,8))
+
+#2 - Load supplied (apparent, real, reactive)
+#l_S = Variable((len_t,8))
+l_P = Variable((len_t,8))
+l_Q = Variable((len_t,8))
+
+#3 - Battery power dispatched (+) or stored (-)
+b_gen = Variable((len_t,8)) #apparent power term
+b_eat = Variable((len_t,8)) #real power term
+#b_Q = Variable((len_t,8))
+
+#4 - Diesel power generated
+d_S = Variable((len_t,8))
+#d_P = Variable((len_t,8))
+#d_Q = Variable((len_t,8))
+#Only want s term for generation
+
+#5 - Solar power (real and reactive)
+#s_P = Variable((len_t,8))
+#s_Q = Variable((len_t,8))
+#Solar input currently in terms of reactive power (S), but can create real and reactive variables to track split or constrain to full real power output.
+
+#6 - Net power
+s = Variable((len_t,8))
+p = Variable((len_t,8))
+q = Variable((len_t,8))
+s_max = Variable((len_t,8))
+
+#7 - Voltage
+V = Variable((len_t,8))
+
+#8 - Energy stock
+j = Variable((len_t,8)) #Battery state of charge
+f = Variable((len_t,8)) #Diesel fuel available
+
+#9-11 - Line variable
+P = Variable((len_t,8)) #active power flow
+Q = Variable((len_t,8)) #reactive power flow
+L = Variable((len_t,8)) #squared magnitude of complex current
