@@ -140,3 +140,14 @@ f = Variable((len_t,8)) #Diesel fuel available
 P = Variable((len_t,8)) #active power flow
 Q = Variable((len_t,8)) #reactive power flow
 L = Variable((len_t,8)) #squared magnitude of complex current
+
+# %% Define objective function
+
+objective = Maximize( sum(F_P@R.T) )
+
+# %% Constraints 0
+
+#0.1 - Nothing between node 0 and itself
+constraints = [ P[:,0] == 0, Q[:,0] == 0, L[:,0] == 0]
+#0.2 - Fix node 0 voltage to be 1 p.u.
+constraints += [ V[:,0] == 1 ]
