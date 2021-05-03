@@ -59,3 +59,38 @@ d_rating = np.array([0, 0, 0, 8.0, 0, 0, 0, 0]) #diesel
 #8 - voltage limits
 V_min = 0.95
 V_max = 1.05
+
+# %% PARAMETERS C (9-12)
+
+#9 - Resistance and reactance
+r = np.array([0,0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+x = np.array([0,0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
+
+#10 - Max current
+I_max = np.array([0,1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2])
+
+#11 - Adjacency matrix
+A = np.array([[0, 1, 1, 1, 1, 1, 1, 1],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0]])
+#A[i, j]=1 if i is the parent of j
+
+#12 - Node indexing
+j_idx = np.arange(8) #Index including all 8 nodes
+rho = np.array([0, 0, 0, 0, 0, 0, 0, 0]) #Defines parent nodes in for loops
+
+#%% PARAMETERS D (13-14)
+
+#13 - Time step
+dt = 1
+
+#14 - Inverter efficiencies
+nu_s = 1 #solar
+nu_b = 1 #battery
+#These values are not yet built into constraints. 
+#No efficiency value for generator because we assume generator energy already accounts for efficiency losses.
