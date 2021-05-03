@@ -255,3 +255,10 @@ for t in range(len_t):
 
 #18 - Current limit
 constraints += [ L[t] <= I_max**2 ]
+
+# %% SOLVE
+
+prob = Problem(objective, constraints)
+prob.solve()
+print(prob.status)
+print(prob.value)
