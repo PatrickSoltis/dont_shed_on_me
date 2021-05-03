@@ -191,7 +191,7 @@ if len_t > 1:
     for t in range(1, len_t):
         constraints += [ f[t] == f[t-1] - d_S[t-1]*dt ]
 
-# %% CONSTRAINTS C (7-9, 14)
+# %% CONSTRAINTS C (7-9, 16)
 
 for t in range(len_t):
     for jj in j_idx:
@@ -211,7 +211,7 @@ for t in range(len_t):
         constraints += [ norm(vstack([p[t,jj],q[t,jj]])) <= s[t,jj] ]
         #Homework only checked this relationship generation, this is for net power
 
-# %% Constraints D (10-12)
+# %% CONSTRAINTS D (10-12)
 
 #10 - Battery and solar only emit real power
 #constraints += [ s_P == s_S ]
@@ -225,7 +225,7 @@ constraints += [ l_P <= D_P, 0 <= l_P ] #try without this first
 constraints += [ s <= s_max ]
 #where s is apparent power generated at each node, and s is theoretical capacity
 
-# %% Constraints E (13-15)
+# %% CONSTRAINTS E (13-15)
 
 for t in range(len_t):
     
@@ -245,3 +245,13 @@ if len_t > 1:
 else:
     constraints += [ b_gen[0]*dt <= j_start ]
     constraints += [ d_S[0]*dt <= f_start ]
+
+# %% CONSTRAINTS F (17-18)
+
+for t in range(len_t):
+
+    #17 - Allowed voltages
+    constraints += [ V_min**2 <= V[t], V[t] <= V_max**2 ]
+
+#18 - Current limit
+constraints += [ L[t] <= I_max**2 ]
