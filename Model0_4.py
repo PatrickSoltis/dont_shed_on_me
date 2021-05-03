@@ -98,25 +98,19 @@ nu_b = 1 #battery
 # %% Optimization Variables
 #Variable shape: (rows, columns)
 
-#1 - Fraction of load served
-#F = Variable((len_t,8))
+#1 - Fraction of real load served
 F_P = Variable((len_t,8))
 
 #2 - Load supplied (apparent, real, reactive)
-#l_S = Variable((len_t,8))
 l_P = Variable((len_t,8))
 l_Q = Variable((len_t,8))
 
 #3 - Battery power dispatched (+) or stored (-)
 b_gen = Variable((len_t,8)) #apparent power term
 b_eat = Variable((len_t,8)) #real power term
-#b_Q = Variable((len_t,8))
 
 #4 - Diesel power generated
 d_S = Variable((len_t,8))
-#d_P = Variable((len_t,8))
-#d_Q = Variable((len_t,8))
-#Only want s term for generation
 
 #5 - Solar power (real and reactive)
 #s_P = Variable((len_t,8))
@@ -145,9 +139,43 @@ L = Variable((len_t,8)) #squared magnitude of complex current
 
 objective = Maximize( sum(F_P@R.T) )
 
-# %% Constraints 0
+# %% CONSTRAINTS 0
 
 #0.1 - Nothing between node 0 and itself
 constraints = [ P[:,0] == 0, Q[:,0] == 0, L[:,0] == 0]
 #0.2 - Fix node 0 voltage to be 1 p.u.
 constraints += [ V[:,0] == 1 ]
+
+# %% CONSTRAINTS A (1-5)
+
+#1 - Net power generated at each node
+constraints += [ s_max == b_gen+d_S+s_S ]
+
+#2 - No phantom batteries, generators, or loads
+no_batteries = [0, 3, 4, 5, 6]
+no_generator = [0, 1, 2, 4, 5, 6, 7]
+no_load = [0, 1, 2, 3]
+for node in no_batteries:
+    constraints += [ b_gen[:, node] == 0 ]
+    constraints += [ b_eat[:, node] == 0 ]
+for node in no_generator:
+    constraints += [ d_S[:, node] == 0 ]
+for node in no_load:
+    constraints += [ l_P[:, node] == 0 ]
+    constraints += [ l_Q[:, node] == 0]
+
+#3 - Define fraction of load served
+constraints += [ F_P == l_P/D_P ]
+
+#4 - Guarantee full load for critical nodes (removed for initial run)
+#critical = [4, 5]
+#for node in critical:
+#    constraints += [ F_P[:, node] == 1. ]
+
+# %% Add to later block
+#11 - Power delivered cannot exceed demand
+constraints += [ l_P <= D_P, 0 <= l_P ] #try without this first
+
+#12 - Need to limit apparent power
+constraints += [ s <= s_max ]
+#where s is apparent power generated at each node, and s was generator limit
