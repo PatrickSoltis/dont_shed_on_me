@@ -172,6 +172,49 @@ constraints += [ F_P == l_P/D_P ]
 #for node in critical:
 #    constraints += [ F_P[:, node] == 1. ]
 
+# %% CONSTRAINTS B (5-6)
+
+#5 - Battery state of charge
+constraints += [ j[0] == j_start ]
+if len_t > 1:
+    for t in range(1,len_t):
+        constraints += [ j[t] == j[t-1] - b_gen[t-1]*dt + b_eat[t-1] ]
+for t in range(len_t):
+    constraints += [ 0 <= j[t], j[t] <= j_max]
+
+#6 - Fuel stock
+constraints += [ f[0] == f_start ]
+if len_t > 1:
+    for t in range(1, len_t):
+        constraints += [ f[t] == f[t-1] - d_S[t-1]*dt ]
+
+# %% CONSTRAINTS C (7-9, 14)
+
+for t in range(len_t):
+    for jj in j_idx:
+        i = rho[jj]
+
+        #7 - DistFlow equations
+        constraints += [ P[t,jj] == l_P[t,jj] + b_eat[t,jj] - p[t,jj] + r[jj]*L[t,jj] + A[jj]@P[t,:] ]
+        constraints += [ Q[t,jj] == l_Q[t,jj] - q[t,jj] + x[jj]*L[t,jj] + A[jj]@Q[t,:] ]
+
+        #8 - Voltage drop
+        constraints += [ V[t,jj] - V[t,i] == (r[jj]**2 + x[jj]**2)*L[t,jj] - 2*(r[jj]*P[t,jj].T + x[jj]*Q[t,jj].T) ]
+
+        #9 - Squared current magnitude (relaxed)
+        constraints += [ quad_over_lin(vstack([P[t,jj],Q[t,jj]]), V[t,jj]) <= L[t,jj] ]
+
+        #14 - Definition of apparent power
+        constraints += [ norm(vstack([p[t,jj],q[t,jj]])) <= s[t,jj] ]
+        #Homework only checked this relationship generation, this is for net power
+
+# %% Constraints D (10)
+
+#10 - Battery and solar only emit real power
+#constraints += [ s_P == s_S ] #s_P term commented out
+#constraints += [ b_P == b_gen ] #b_P term nonexistent
+
+
 # %% Add to later block
 #11 - Power delivered cannot exceed demand
 constraints += [ l_P <= D_P, 0 <= l_P ] #try without this first
