@@ -32,20 +32,19 @@ month = 'June'
 
 #1 - Value ranking of different customer categories (5=highest priority, 1=lowest)
 R = np.array([[0, 0, 0, 0, 5, 4, 3, 2]])
-    #R array is 2D, but remaining length-8 arrays are only 1 dimension.
+#   R array is 2D, but remaining length-8 arrays are only 1 dimension.
 
 #2 - Load total power for each node into D
 D = D_df.iloc[t0:t0+len_t, [1,10,19,28,37,46,55,64]].to_numpy()
 D_P = D_df.iloc[t0:t0+len_t, [4,13,22,31,40,49,58,67]].to_numpy()
 D_Q = D_df.iloc[t0:t0+len_t, [7,16,25,34,43,52,61,70]].to_numpy()
-#Index as: D[hour number, node number]
+#   Index as: D[hour number, node number]
 
 #3 - solar PV generation
-
 hourly_gen = np.array(solar[month+' (kW)'].values[t0:t0+len_t])
 zeros = np.zeros(len_t)
-s_S = np.array([zeros, hourly_gen, hourly_gen, zeros, zeros, zeros, zeros, zeros]).T
-#Index as: s_S[hour number, node number]
+S_S = np.array([zeros, hourly_gen, hourly_gen, zeros, zeros, zeros, zeros, zeros]).T
+#   Index as: S_S[hour number, node number]
 
 #4 - battery energy (batteries at nodes 1 & 2, EV at 7)
 j_max = np.array([0, 10, 10, 0, 0, 0, 0, 100]) 
@@ -56,9 +55,9 @@ j_start = np.array([0, 5, 5, 0, 0, 0, 0, 50])# Chosen to start at 50% charge
 f_start = np.array([0, 0, 0, 10000, 0, 0, 0, 0]) 
 
 #6 - power ratings
-# 10kWh batteries at nodes 1 & 2, 100 kWh battery at node 7. Can only discharge 95% of capacity.
+#   10kWh batteries at nodes 1 & 2, 100 kWh battery at node 7. Can only discharge 95% of capacity.
 b_rating = np.array([0, 9.5, 9.5, 0, 0, 0, 0, 95]) 
-# One 20kW diesel generator
+#   One 20kW diesel generator at node 3
 d_rating = np.array([0, 0, 0, 20, 0, 0, 0, 0]) 
 
 #7 - power factors (currently is implicit 0.95 in D_df columns)
@@ -67,19 +66,6 @@ d_rating = np.array([0, 0, 0, 20, 0, 0, 0, 0])
 #8 - voltage limits
 V_min = 0.5 #0.95
 V_max = 3 #1.05 #
-
-# Check available energy
-print('D:',np.sum(D))
-print('s_S:',np.sum(s_S))
-print('j_start:',np.sum(j_start))
-print('f_start:',np.sum(f_start))
-print('energy available:',np.sum([np.sum(s_S),np.sum(j_start),np.sum(f_start)]))
-
-
-
-# %% Parameters C (9-11)
-
-j_idx = np.arange(8)
 
 #9 - Resistance and reactance
 r = np.array([0,0.07, 0.07, 0.07, 0.07, 0.07, 0.07, 0.07])
@@ -100,24 +86,20 @@ A = np.array([[0, 1, 1, 1, 1, 1, 1, 1],
 #A[i, j]=1 if i is the parent of j
 #Node 0 has no parent
 
-#Rho - Defines parent nodes in for loops
-rho = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+#12 - Node indexing
+j_idx = np.arange(8) #Index including all 8 nodes
+rho = np.array([0, 0, 0, 0, 0, 0, 0, 0]) #Defines parent nodes in for loops
 
-
-#  Parameters D (12-)
-
-#12 - Time step
+#13 - Time step
 dt = 1
 
-#13 - Inverter efficiencies
+#14 - Inverter efficiencies
 nu_s = 1 #solar
 nu_b = 1 #battery
-#Efficiency already included in generator output. 
-#Only matters for solar because solar input is total solar energy,
-#and for batteries because energy put in and out of system needs to be in terms of system.
-#Note values are not yet built into constraints
+#   These values are not yet built into constraints. 
+#   No efficiency value for generator because we assume generator energy already accounts for efficiency losses.
 
-# Optimization Variables
+#%% OPTIMIZATION VARIABLES
 #Variable shape: (rows, columns)
 
 #1 - Fraction of load served
