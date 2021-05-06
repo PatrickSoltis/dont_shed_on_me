@@ -121,10 +121,9 @@ d_P = Variable((len_t,8))
 d_Q = Variable((len_t,8))
 
 #5 - Solar power (real and reactive)
-s_P = Variable((len_t,8))
-s_Q = Variable((len_t,8))
+S_P = Variable((len_t,8))
+S_Q = Variable((len_t,8))
 #Currently solar only provides real power: s_P = s_S (in constraints)
-#So these are duplicative, but relevant if modeling inverter that can provide P and Q
 
 #6 - Net power
 s = Variable((len_t,8))
@@ -138,19 +137,13 @@ V = Variable((len_t,8))
 j = Variable((len_t,8)) #Battery state of charge
 f = Variable((len_t,8)) #Diesel fuel available
 
-#9-11 - Line variable
+#9-11 - Line variables
 P = Variable((len_t,8)) #active power flow
 Q = Variable((len_t,8)) #reactive power flow
 L = Variable((len_t,8)) #squared magnitude of complex current
 
-### Adding a switch that can force L=0
-L_nom = Variable((len_t,8))
-switch = Variable((len_t, 8), integer=True)
+#%% OBJECTIVE FUNCTION
 
-
-# %% Define objective function
-
-#objective = Maximize( sum(F@R.T) )
 objective = Minimize( -sum(F@R.T) )
 
 # %% Constraints 0
