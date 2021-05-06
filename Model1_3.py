@@ -146,60 +146,40 @@ L = Variable((len_t,8)) #squared magnitude of complex current
 
 objective = Minimize( -sum(F@R.T) )
 
-# %% Constraints 0
+#%% CONSTRAINTS
 
-#Nothing between node 0 and itself
-constraints = [ P[:,0] == 0, Q[:,0] == 0, L[:,0] == 0]
-#Fix node 0 voltage to be 1 p.u.
+#1 - Define fraction of load served (may need to loop?)
+constraints = [ F == l_P/D_P ]
+
+#2 - Node 0 has no line connecting itself, and reference voltage
+constraints += [ P[:,0] == 0, Q[:,0] == 0, L[:,0] == 0]
 constraints += [ V[:,0] == 1 ]
 
+#3 - Net power consumed at each node
+constraints += [ s == l_S - b_S - d_S - S_S ]
+constraints = [ p == l_P - b_P - d_P - S_P ]
+constraints += [ q == l_Q - b_Q - d_Q - S_Q ]
 
-#  Constraints A (1-4)
-
-#1 - Net power consumed at each node
-constraints = [ p == l_P - b_P - d_P - s_P ]
-constraints += [ q == l_Q - b_Q - d_Q - s_Q ]
-constraints += [ s == l_S - b_S - d_S - s_S ]
-
-#2 - No phantom batteries or generators
+#4 - No phantom batteries, generators, or PV
 no_batteries = [0, 3, 4, 5, 6]
 no_generator = [0, 1, 2, 4, 5, 6, 7]
 no_solar = [0, 3, 4, 5, 6, 7]
 
-for node in no_batteries:
-    constraints += [ b_S[:, node] == 0 ]
-    constraints += [ b_P[:, node] == 0 ]
-    constraints += [ b_Q[:, node] == 0 ]
-for node in no_generator:
-    constraints += [ d_S[:, node] == 0 ]
-    constraints += [ d_P[:, node] == 0 ]
-    constraints += [ d_Q[:, node] == 0 ]
-for node in no_solar:
-    constraints += [ s_P[:, node] == 0 ]
-    constraints += [ s_Q[:, node] == 0 ]
-    
-#3 - Define fraction of load served (may need to loop?)
-#constraints += [ F == l_S/D ]
-constraints += [ F == l_P/D_P ]
+constraints += [ b_S[:, no_batteries] == 0 ]
+constraints += [ b_P[:, no_batteries] == 0 ]
+constraints += [ b_Q[:, no_batteries] == 0 ]
 
-#4 - Guarantee full load for critical nodes
-# critical = [4, 5]
-# for node in critical:
-#     constraints += [ F[:, node] == 1. ]
+constraints += [ d_S[:, no_generator] == 0 ]
+constraints += [ d_P[:, no_generator] == 0 ]
+constraints += [ d_Q[:, no_generator] == 0 ]
 
-#4.x - Power delivered cannot exceed demand
-#constraints += [ l_S <= D ]
+constraints += [ S_P[:, no_solar] == 0 ]
+constraints += [ S_Q[:, no_solar] == 0 ]
+
+#5 - Power delivered cannot exceed demand
 constraints += [ l_P <= D_P ]
-#constraints += [ l_Q <= D_Q ]
 
-#Need to limit apparent power. In Homework, it was done this way:
-#constraints = [ s <= s_max ]
-#where s is apparent power generated at each node, and s was generator limit
-
-
-#  Constraints B (5-6)
-
-#5 - Battery state of charge
+#6 - Battery state of charge
 constraints += [ j[0] == j_start ]
 if len_t > 1:
     for t in range(1,len_t):
@@ -207,11 +187,16 @@ if len_t > 1:
 for t in range(len_t):
     constraints += [ 0 <= j[t], j[t] <= j_max]
 
-#6 - Fuel stock
+#7 - Diesel generator fuel stock
 constraints += [ f[0] == f_start ]
 if len_t > 1:
     for t in range(1, len_t):
         constraints += [ f[t] == f[t-1] - d_S[t-1]*dt ]
+constraints += [ 0 <= f ]
+
+#%%
+
+
 
 
 # Constraints C (7-9, 14)
