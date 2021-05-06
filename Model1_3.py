@@ -23,7 +23,7 @@ D_df = pd.read_csv('nodes.csv')
 #Select hour numbers to use from load and solar data
 # Scenarios: 55 hours, 5 days, 10 days
 t0 = 0
-len_t = 10
+len_t = 120
 
 #Select month of solar data (June/September/December)
 month = 'June'
@@ -123,7 +123,7 @@ d_Q = Variable((len_t,8))
 #5 - Solar power (real and reactive)
 S_P = Variable((len_t,8))
 S_Q = Variable((len_t,8))
-#Currently solar only provides real power: s_P = s_S (in constraints)
+#If solar provides only real power, add to constraints: S_P = S_S
 
 #6 - Net power
 s = Variable((len_t,8))
@@ -157,7 +157,7 @@ constraints += [ V[:,0] == 1 ]
 
 #3 - Net power consumed at each node
 constraints += [ s == l_S - b_S - d_S - S_S ]
-constraints = [ p == l_P - b_P - d_P - S_P ]
+constraints += [ p == l_P - b_P - d_P - S_P ]
 constraints += [ q == l_Q - b_Q - d_Q - S_Q ]
 
 #4 - No phantom batteries, generators, or PV
@@ -175,7 +175,7 @@ constraints += [ d_Q[:, no_generator] == 0 ]
 
 constraints += [ S_P[:, no_solar] == 0 ]
 constraints += [ S_Q[:, no_solar] == 0 ]
-
+    
 #5 - Power delivered cannot exceed demand
 constraints += [ l_P <= D_P ]
 
@@ -194,89 +194,7 @@ if len_t > 1:
         constraints += [ f[t] == f[t-1] - d_S[t-1]*dt ]
 constraints += [ 0 <= f ]
 
-for t in range(len_t):
-    for jj in j_idx:
-        i = rho[jj]
-
-        #8 - DistFlow equations
-        constraints += [ P[t,jj] == p[t,jj] + r[jj]*L[t,jj] + A[jj]@P[t,:] ] 
-        constraints += [ Q[t,jj] == q[t,jj] + x[jj]*L[t,jj] + A[jj]@Q[t,:] ]
-
-        #9 - Voltage drop
-        constraints += [ V[t,jj] - V[t,i] == (r[jj]**2 + x[jj]**2)*L[t,jj] - 2*(r[jj]*P[t,jj].T + x[jj]*Q[t,jj].T) ]
-    
-        #10 - Definition of squared magnitude of complex current
-        constraints += [ quad_over_lin(vstack([P[t,jj],Q[t,jj]]), V[t,jj]) <= L[t,jj] ]
-
-        #11 - Definitions of apparent power consumption and production (for solar, battery, and diesel)
-        constraints += [ norm(vstack([l_P[t,jj],l_Q[t,jj]])) <= l_S[t,jj] ]
-        constraints += [ norm(vstack([S_P[t,jj],S_Q[t,jj]])) <= S_S[t,jj] ]
-        constraints += [ norm(vstack([b_P[t,jj],b_Q[t,jj]])) <= b_S[t,jj] ]
-        constraints += [ norm(vstack([d_P[t,jj],d_Q[t,jj]])) <= d_S[t,jj] ]
-
-    #12 - Definitions of total apparent power across system (???)
-    constraints += [ norm(vstack([sum(l_P[t,:]),sum(l_Q[t,:])])) <= sum(l_S[t,:]) ]
-    constraints += [ norm(vstack([sum(S_P[t,:]),sum(S_Q[t,:])])) <= sum(S_S[t,:]) ]
-    constraints += [ norm(vstack([sum(b_P[t,:]),sum(b_Q[t,:])])) <= sum(b_S[t,:]) ]
-    constraints += [ norm(vstack([sum(d_P[t,:]),sum(d_Q[t,:])])) <= sum(d_S[t,:]) ]
-    #Try out to see if same results:
-    #constraints += [ norm(vstack([sum(p[t,:]),sum(q[t,:])])) <= sum(s[t,:]) ]
-
-    #13 - Power supplied (l) cannot exceed power generated
-    constraints += [ sum(l_S[t, :]) <= sum(b_S[t, :] + d_S[t, :] + S_S[t, :]), 
-                    sum(l_P[t, :]) <= sum(b_P[t, :] + d_P[t, :] + S_P[t, :]), 
-                    sum(l_Q[t, :]) <= sum(b_Q[t, :] + d_Q[t, :] + S_Q[t, :])] 
-#%%
-
-# Constraints C (7-9, 14)
-
-for t in range(len_t):
-    for jj in j_idx:
-        i = rho[jj]
-
-        #7 - DistFlow equations
-        constraints += [ P[t,jj] == p[t,jj] + r[jj]*L[t,jj] + A[jj]@P[t,:] ] 
-        constraints += [ Q[t,jj] == q[t,jj] + x[jj]*L[t,jj] + A[jj]@Q[t,:] ]
-
-#         #8 - Voltage drop
-        constraints += [ V[t,jj] - V[t,i] == (r[jj]**2 + x[jj]**2)*L[t,jj] - 2*(r[jj]*P[t,jj].T + x[jj]*Q[t,jj].T) ]
-
-#         #9 - Squared current magnitude (relaxed)
-        constraints += [ quad_over_lin(vstack([P[t,jj],Q[t,jj]]), V[t,jj]) <= L[t,jj] ]
-
-#         #14 - Definition of apparent power
-#        constraints += [ norm(vstack([p[t,jj],q[t,jj]])) <= s[t,jj] ]
-        # Homework only checked this relationship generation, this is for net power
-        # MB note: instead of applying apparent power constraint for cumulative, apply to each source (s/b/d)
-        
-#         # New - Definition of apparent power for generation
-        constraints += [ norm(vstack([l_P[t,jj],l_Q[t,jj]])) <= l_S[t,jj] ]
-        constraints += [ norm(vstack([s_P[t,jj],s_Q[t,jj]])) <= s_S[t,jj] ]
-        constraints += [ norm(vstack([b_P[t,jj],b_Q[t,jj]])) <= b_S[t,jj] ]
-        constraints += [ norm(vstack([d_P[t,jj],d_Q[t,jj]])) <= d_S[t,jj] ]
-    constraints += [ norm(vstack([sum(l_P[t,:]),sum(l_Q[t,:])])) <= sum(l_S[t,:]) ]
-    constraints += [ norm(vstack([sum(s_P[t,:]),sum(s_Q[t,:])])) <= sum(s_S[t,:]) ]
-    constraints += [ norm(vstack([sum(b_P[t,:]),sum(b_Q[t,:])])) <= sum(b_S[t,:]) ]
-    constraints += [ norm(vstack([sum(d_P[t,:]),sum(d_Q[t,:])])) <= sum(d_S[t,:]) ]
-    
-    # Ensure that power supplied l is less than or equal to power generated
-    constraints += [ sum(l_S[t, :]) <= sum(b_S[t, :] + d_S[t, :] + s_S[t, :]) ]
-    constraints += [ sum(l_P[t, :]) <= sum(b_P[t, :] + d_P[t, :] + s_P[t, :]) ]
-    constraints += [ sum(l_Q[t, :]) <= sum(b_Q[t, :] + d_Q[t, :] + s_Q[t, :]) ] 
-
-
-# Constraints E (11-13)
-
-for t in range(len_t):
-    
-    #11 - Battery (dis)charging limit
-    constraints += [ -b_rating <= b_S[t], b_S[t] <= b_rating ]
-    constraints += [ 0 <= b_Q[t] ]
-
-    #12 - Generator output limit
-    constraints += [ d_S[t] <= d_rating ]
-
-#13 - Battery or generator does not discharge more than available
+#8 - Battery or generator does not discharge more than available
 constraints += [ b_S[0]*dt <= j_start ]
 constraints += [ d_S[0]*dt <= f_start ]
 if len_t > 1:
@@ -284,45 +202,71 @@ if len_t > 1:
         constraints += [ b_S[t]*dt <= j[t-1] ]
         constraints += [ d_S[t]*dt <= f[t-1] ]
 
-
-# Constraints F (15-16)
-
 for t in range(len_t):
 
-    #15 - Allowed voltages
+    #9 - Battery (dis)charging limit
+    constraints += [ -b_rating <= b_S[t], b_S[t] <= b_rating ]
+    constraints += [ 0 <= b_Q[t] ] # ???
+
+    #10 - Generator output limit
+    constraints += [ d_S[t] <= d_rating ]
+
+    for jj in j_idx:
+        i = rho[jj]
+
+        #11 - DistFlow equations
+        constraints += [ P[t,jj] == p[t,jj] + r[jj]*L[t,jj] + A[jj]@P[t,:] ] 
+        constraints += [ Q[t,jj] == q[t,jj] + x[jj]*L[t,jj] + A[jj]@Q[t,:] ]
+
+        #12 - Voltage drop
+        constraints += [ V[t,jj] - V[t,i] == (r[jj]**2 + x[jj]**2)*L[t,jj] - 2*(r[jj]*P[t,jj].T + x[jj]*Q[t,jj].T) ]
+    
+        #13 - Definition of squared magnitude of complex current
+        constraints += [ quad_over_lin(vstack([P[t,jj],Q[t,jj]]), V[t,jj]) <= L[t,jj] ]
+
+        #14 - Definitions of apparent power consumption and production (for solar, battery, and diesel)
+        constraints += [ norm(vstack([l_P[t,jj],l_Q[t,jj]])) <= l_S[t,jj] ]
+        constraints += [ norm(vstack([S_P[t,jj],S_Q[t,jj]])) <= S_S[t,jj] ]
+        constraints += [ norm(vstack([b_P[t,jj],b_Q[t,jj]])) <= b_S[t,jj] ]
+        constraints += [ norm(vstack([d_P[t,jj],d_Q[t,jj]])) <= d_S[t,jj] ]
+
+    #15 - Definitions of total apparent power across system
+    #RECOMMENDED removal - Optimization gives same results without
+    #constraints += [ norm(vstack([sum(l_P[t,:]),sum(l_Q[t,:])])) <= sum(l_S[t,:]) ]
+    #constraints += [ norm(vstack([sum(S_P[t,:]),sum(S_Q[t,:])])) <= sum(S_S[t,:]) ]
+    #constraints += [ norm(vstack([sum(b_P[t,:]),sum(b_Q[t,:])])) <= sum(b_S[t,:]) ]
+    #constraints += [ norm(vstack([sum(d_P[t,:]),sum(d_Q[t,:])])) <= sum(d_S[t,:]) ]
+
+    #16 - Power supplied (l) cannot exceed power generated
+    constraints += [ sum(l_S[t, :]) <= sum(b_S[t, :] + d_S[t, :] + S_S[t, :]) ]
+    constraints += [ sum(l_P[t, :]) <= sum(b_P[t, :] + d_P[t, :] + S_P[t, :]) ]
+    constraints += [ sum(l_Q[t, :]) <= sum(b_Q[t, :] + d_Q[t, :] + S_Q[t, :]) ] 
+
+    #17 - Allowed voltages
     constraints += [ V_min**2 <= V[t], V[t] <= V_max**2 ]
 
-#16 - Current limit
-constraints += [ L[t] <= I_max**2 ]
+    #18 - Current limit
+    constraints += [ L[t] <= I_max**2 ]
 
+#19 - Power consumed/generated cannot be negative
+constraints += [d_S >= 0, d_P >= 0, 
+                l_S >= 0, l_P >= 0, 
+                S_P >= 0 ]
 
-# Constraints G (new)
-# Ensure that power consumed/generated is greater than or equal to 0
-constraints += [d_S >= 0,
-                d_P >= 0, 
-                l_S >= 0, 
-                l_P >= 0, 
-                s_P >= 0]
-
-# Constraints F - Enable Switch
-constraints += [ switch >= 0, switch <= 1 ]
-for t in range(len_t):
-    #vars: L, L_nom, and switch
-    constraints += [ L[t] == L_nom[t]@switch[t].T ]
-
-# %% Solve
+#%% SOLVE
 prob = Problem(objective, constraints)
 prob.solve()
 print(prob.status)
 print(prob.value)
 
+#%% FRACTIONS SERVED
 for t in range(len_t):
     print("Time %3.0f"%(t))
     for jj in j_idx:
         print("Node %2.0f fraction served: %1.3f"%(jj, F[t,jj].value))
 
 
-# %%**Look at & Plot Underlying Demand/Supply/Generation Values at Each Node**
+# %% Look at & Plot Underlying Demand/Supply/Generation Values at Each Node
 
 # Define function that creates a data frame of variables or arrays from output
 def var_df(var):
@@ -369,9 +313,9 @@ F_df.mean()[4:8]
 
 
 # %% Create lists of active, reactive, and apparent P variables/arrays
-active_P_vars = [D_P, l_P, b_P, s_P, d_P]#p
-reactive_P_vars = [D_Q, l_Q, b_Q, s_Q, d_Q]#q
-apparent_P_vars = [D, l_S, b_S, s_S, d_S]#s
+active_P_vars = [D_P, l_P, b_P, S_P, d_P]#p
+reactive_P_vars = [D_Q, l_Q, b_Q, S_Q, d_Q]#q
+apparent_P_vars = [D, l_S, b_S, S_S, d_S]#s
 active_P_df_list = [1, 2, 3, 4, 5] 
 reactive_P_df_list = [1, 2, 3, 4, 5] #'Demand', 'Supply', 'Solar', 'Battery', 'Diesel', 'Net Power'
 apparent_P_df_list = [1, 2, 3, 4, 5] #'Demand', 'Supply', 'Solar', 'Battery', 'Diesel', 'Net Power'
