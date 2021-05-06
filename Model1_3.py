@@ -194,10 +194,39 @@ if len_t > 1:
         constraints += [ f[t] == f[t-1] - d_S[t-1]*dt ]
 constraints += [ 0 <= f ]
 
+for t in range(len_t):
+    for jj in j_idx:
+        i = rho[jj]
+
+        #8 - DistFlow equations
+        constraints += [ P[t,jj] == p[t,jj] + r[jj]*L[t,jj] + A[jj]@P[t,:] ] 
+        constraints += [ Q[t,jj] == q[t,jj] + x[jj]*L[t,jj] + A[jj]@Q[t,:] ]
+
+        #9 - Voltage drop
+        constraints += [ V[t,jj] - V[t,i] == (r[jj]**2 + x[jj]**2)*L[t,jj] - 2*(r[jj]*P[t,jj].T + x[jj]*Q[t,jj].T) ]
+    
+        #10 - Definition of squared magnitude of complex current
+        constraints += [ quad_over_lin(vstack([P[t,jj],Q[t,jj]]), V[t,jj]) <= L[t,jj] ]
+
+        #11 - Definitions of apparent power consumption and production (for solar, battery, and diesel)
+        constraints += [ norm(vstack([l_P[t,jj],l_Q[t,jj]])) <= l_S[t,jj] ]
+        constraints += [ norm(vstack([S_P[t,jj],S_Q[t,jj]])) <= S_S[t,jj] ]
+        constraints += [ norm(vstack([b_P[t,jj],b_Q[t,jj]])) <= b_S[t,jj] ]
+        constraints += [ norm(vstack([d_P[t,jj],d_Q[t,jj]])) <= d_S[t,jj] ]
+
+    #12 - Definitions of total apparent power across system (???)
+    constraints += [ norm(vstack([sum(l_P[t,:]),sum(l_Q[t,:])])) <= sum(l_S[t,:]) ]
+    constraints += [ norm(vstack([sum(S_P[t,:]),sum(S_Q[t,:])])) <= sum(S_S[t,:]) ]
+    constraints += [ norm(vstack([sum(b_P[t,:]),sum(b_Q[t,:])])) <= sum(b_S[t,:]) ]
+    constraints += [ norm(vstack([sum(d_P[t,:]),sum(d_Q[t,:])])) <= sum(d_S[t,:]) ]
+    #Try out to see if same results:
+    #constraints += [ norm(vstack([sum(p[t,:]),sum(q[t,:])])) <= sum(s[t,:]) ]
+
+    #13 - Power supplied (l) cannot exceed power generated
+    constraints += [ sum(l_S[t, :]) <= sum(b_S[t, :] + d_S[t, :] + S_S[t, :]), 
+                    sum(l_P[t, :]) <= sum(b_P[t, :] + d_P[t, :] + S_P[t, :]), 
+                    sum(l_Q[t, :]) <= sum(b_Q[t, :] + d_Q[t, :] + S_Q[t, :])] 
 #%%
-
-
-
 
 # Constraints C (7-9, 14)
 
@@ -231,9 +260,9 @@ for t in range(len_t):
     constraints += [ norm(vstack([sum(d_P[t,:]),sum(d_Q[t,:])])) <= sum(d_S[t,:]) ]
     
     # Ensure that power supplied l is less than or equal to power generated
-    constraints += [sum(l_S[t, :]) <= sum(b_S[t, :] + d_S[t, :] + s_S[t, :]), 
-                    sum(l_P[t, :]) <= sum(b_P[t, :] + d_P[t, :] + s_P[t, :]), 
-                    sum(l_Q[t, :]) <= sum(b_Q[t, :] + d_Q[t, :] + s_Q[t, :])] 
+    constraints += [ sum(l_S[t, :]) <= sum(b_S[t, :] + d_S[t, :] + s_S[t, :]) ]
+    constraints += [ sum(l_P[t, :]) <= sum(b_P[t, :] + d_P[t, :] + s_P[t, :]) ]
+    constraints += [ sum(l_Q[t, :]) <= sum(b_Q[t, :] + d_Q[t, :] + s_Q[t, :]) ] 
 
 
 # Constraints E (11-13)
