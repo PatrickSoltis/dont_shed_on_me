@@ -162,6 +162,9 @@ P = Variable((len_t,8)) #active power flow
 Q = Variable((len_t,8)) #reactive power flow
 L = Variable((len_t,8)) #squared magnitude of complex current
 
+L_nom = Variable((len_t,8))
+switch = Variable((len_t,8), boolean=True)
+
 
 # %% Define objective function
 
@@ -312,13 +315,19 @@ constraints += [d_S >= 0,
                 l_P >= 0, 
                 s_P >= 0]
 
+# Constraints H (new new)
 
+for t in range(len_t):
+    constraints += [ L[t] == L_nom[t]@switch[t].T ]
 
 # %% Solve
 prob = Problem(objective, constraints)
 prob.solve()
 print(prob.status)
 print(prob.value)
+
+#Tips for implementing mixed integer programming:
+#https://www.cvxpy.org/tutorial/advanced/index.html#mixed-integer-programs
 
 for t in range(len_t):
     print("Time %3.0f"%(t))
