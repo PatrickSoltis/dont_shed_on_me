@@ -6,13 +6,9 @@ Electricity is essential to daily life in the developed world, powering critical
 
 ## Repository Contents
 
-* MicrogridModel0_1.py - Original model
-* MicrogridModel0_2.py - Latest version
-* git_testing.txt - Place for the team to practice git commands
-
-## Significant updates in Latest Version (0.2)
-
-* All generation is an apparent power (S) term. (This lets s_max and relaxed apparent power definition cap generation at realistic value.)
-* As a result, battery charging (real term b_eat) and discharging (apparent term b_gen) are now in separate terms. Major weakness is that b_eat and b_gen terms currently can both be active in same time step.
-* Model is optimized for fraction of real power delivered (F_P), since apparent power delivered no longer exists.
-* Constraints for P, Q, and L set terms corresponding to line 0-0 to 0. Before, they erroneously set all terms at time step 0 to 0.
+* Model1_3.py - Latest model
+* Other Modelx_y.py - Previous versions of model, preserved in main for instructive purposes
+* All .csv - Sample data for simulating load and generation
+* All .ipynb - iPython notebook versions of previous models
+* TestOutputs1.py - Optional code for greater visibility in model construction and results
+* git_testing.txt - Dummy file for collaborators to practice proper version control
